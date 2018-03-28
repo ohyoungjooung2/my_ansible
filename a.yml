@@ -1,0 +1,8 @@
+---
+- name: Testing shell
+  hosts: Development
+  sudo: yes
+  
+  tasks:
+
+    - script: ./s.sh 

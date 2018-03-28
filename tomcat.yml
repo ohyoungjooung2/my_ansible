@@ -1,0 +1,92 @@
+---
+- name: tomcat install stable
+  hosts: appdev
+  vars:
+     tomcat_version: 8.5.29
+     target_dir: /usr/local
+     mirror_host: mirror.navercorp.com
+     java_home: /usr/local/jdk-9.0.4
+     tomcat_home: /usr/local/apache-tomcat-8.5.29
+
+  tasks:
+     - name: Download tomcat tomcat_version
+       get_url:
+          url: "http://{{ mirror_host }}/apache/tomcat/tomcat-8/v8.5.29/bin/apache-tomcat-8.5.29.tar.gz"
+          dest: "{{ target_dir }}"
+          checksum: sha1:fdc2ac85282af82a494e352c35e33dcfe1dbab6b
+       register: get_tomcat
+     
+
+     - debug:
+         msg: "System {{ inventory_hostname }} download  tomcat  {{ tomcat_version }} on server"
+       when: get_tomcat|changed
+
+
+     - name: "Untar apache-tomcat-{{ tomcat_version }}"
+       unarchive :
+         src: "{{ target_dir}}/apache-tomcat-{{ tomcat_version }}.tar.gz"
+         dest: "{{ target_dir }}"
+         remote_src: yes
+          
+
+     - debug:
+         msg: "System {{ inventory_hostname }} untar tomcat {{ tomcat_version }}"
+
+
+
+     - name: "Add tomcat group"
+       group:
+         name: tomcat
+         state: present
+         gid: 321
+
+    
+     - name: "Add tomcat user"
+       user:
+           name: tomcat
+           shell: /bin/false
+           group: tomcat
+           uid:   123
+
+     - name: "Add JAVA_HOME TO /etc/profile"
+       template: src=templates/java.sh.j2 dest=/etc/profile.d/java.sh
+         mode=0644
+
+
+     - debug:
+         msg: "Add java_home to /etc/profile" 
+
+
+     - shell: |
+         chgrp -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}"
+         chmod -R g+r  "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/conf"
+         chmod  g+x  "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/conf"
+         chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/webapps"
+         chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/work"
+         chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/temp"
+         chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/logs"
+
+
+     - debug:
+         msg: "Ownership set {{ target_dir }}/apache-tomcat-{{ tomcat_version }}" 
+
+
+     - name: "Tomcat {{ tomcat_version }} systemd service add"
+       template: src=templates/tomcat_service.j2 dest=/etc/systemd/system/tomcat.service
+         mode=0755
+
+  
+     - debug:
+         msg: "Tomcat {{ tomcat_version }} add to systemd service" 
+
+
+     - shell: |
+         systemctl daemon-reload
+         systemctl enable tomcat
+         systemctl start tomcat
+         #Firewall8080 open
+         firewall-cmd --permanent --add-port=8080/tcp 
+         firewall-cmd --reload
+
+     - debug:
+         msg: "Tomcat {{ tomcat_version }} add to systemd service start and firewall open" 

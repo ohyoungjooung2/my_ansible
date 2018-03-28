@@ -1,0 +1,9 @@
+[Development]
+ct7 
+u16:5555
+ct6
+
+#Application tomcat server
+
+[appdev]
+tomcat-ct7-dev

@@ -1,0 +1,13 @@
+---
+- name: Java install
+  hosts: Development
+  vars:
+     java_version: 9.0.4
+
+
+  tasks:
+     #- name: Download java
+     - script: ./download_java.sh
+
+     - debug:
+         msg: "System {{ inventory_hostname }} installed  jdk {{ java_version }}"
