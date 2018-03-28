@@ -1,0 +1,1009 @@
+*Test env: Control Machine: Ubuntu Xenial 16.04. Client: Centos7(Virtual box),ubuntu server 16.04
+*Ansible version: 
+yj@Workstation-oyj-X555QG ~/.ansible$ansible --version
+ansible 2.5.0
+  config file = /etc/ansible/ansible.cfg
+  configured module search path = [u'/home/oyj/.ansible/plugins/modules', u'/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/lib/python2.7/dist-packages/ansible
+  executable location = /usr/bin/ansible
+  python version = 2.7.12 (default, Dec  4 2017, 14:50:18) [GCC 5.4.0 20160609]
+
+1)
+root@workstation-oyj-X555QG:/etc/apt/sources.list.d# vi ansible.list 
+
+2)
+deb http://ppa.launchpad.net/ansible/ansible/ubuntu trusty main
+
+
+root@workstation-oyj-X555QG:/etc/apt/sources.list.d# apt-get update
+
+
+
+root@oyj-X555QG:/etc/apt/sources.list.d# apt-get -y install ansible
+
+Other resources
+http://docs.ansible.com/ansible/latest/intro_installation.html#basics-what-will-be-installed
+
+
+
+3) ssh-key generations.
+oyj@Workstation-oyj-X555QG ~$ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/oyj/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/oyj/.ssh/id_rsa.
+Your public key has been saved in /home/oyj/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:Ycwve+PnzW5MqsrHw3tGqQQwFoJqr3Mt7IO9D9ph9GE oyj@Workstation-oyj-X555QG
+The key's randomart image is:
++---[RSA 2048]----+
+|   .. ..         |
+|  .  .+o         |
+| .   . o=        |
+|..     ..o       |
+|. .. E  S..  .   |
+|  ..o .  o. o .  |
+|  =+..  .+oo +   |
+| ++*o. . o*.=oo  |
+| .++=.  oo+O.o+  |
++----[SHA256]-----+
+oyj@Workstation-oyj-X555QG ~$cd .ssh/
+
+
+
+Copy and paste id_rsa.pub to remote's Ct7-test host's .ssh directory as authorized_keys.
+[oyj@Ct7-Test ~]$ mkdir .ssh
+[oyj@Ct7-Test ~]$ chmod 700 .ssh
+[oyj@Ct7-Test ~]$ cd .ssh
+[oyj@Ct7-Test .ssh]$ touch authorized_keys
+[oyj@Ct7-Test .ssh]$ chmod 400 authorized_keys 
+[oyj@Ct7-Test .ssh]$ vi authorized_keys 
+[oyj@Ct7-Test .ssh]$ 
+
+
+
+oyj@Workstation-oyj-X555QG ~$ssh-agent bash
+oyj@Workstation-oyj-X555QG ~$ssh-add ~/.ssh/id_rsa
+Enter passphrase for /home/oyj/.ssh/id_rsa: 
+Identity added: /home/oyj/.ssh/id_rsa (/home/oyj/.ssh/id_rsa)
+oyj@Workstation-oyj-X555QG ~$
+
+
+4) Edit /etc/ansible/hosts
+
+oyj@Workstation-oyj-X555QG ~$vi /etc/ansible/hosts 
+#Just one host
+#Ct7-test host ip
+192.168.56.101
+
+
+5)Test. (It is ok ^^;)
+oyj@Workstation-oyj-X555QG ~$ansible all -m ping
+192.168.56.101 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+
+oyj@Workstation-oyj-X555QG ~$ansible all -a "/bin/echo hello"
+192.168.56.101 | SUCCESS | rc=0 >>
+hello
+
+oyj@Workstation-oyj-X555QG ~$
+
+
+
+6)In real world situation, many servers use different ssh service port instead default 22.
+To test I changed ssh port from 22 to 70.
+[root@Ct7-Test ~]# vi /etc/ssh/sshd_config 
+[root@Ct7-Test ~]# systemctl restart ssh
+Failed to restart ssh.service: Unit not found.
+[root@Ct7-Test ~]# systemctl restart sshd
+root@Ct7-Test ~]# netstat -tpln | grep ssh
+tcp        0      0 0.0.0.0:70              0.0.0.0:*               LISTEN      8657/sshd           
+tcp6       0      0 :::70                   :::*                    LISTEN      8657/sshd           
+          
+[root@Ct7-Test ~]# grep "Port" /etc/ssh/sshd_config 
+Port 70
+#GatewayPorts no
+
+So, there will be error like belows.
+
+oyj@Workstation-oyj-X555QG ~$ansible all -m ping -u oyj --sudo
+
+
+192.168.56.101 | UNREACHABLE! => {
+    "changed": false, 
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host 192.168.56.101 port 22: Connection refused\r\n", 
+    "unreachable": true
+}
+
+
+oyj@Workstation-oyj-X555QG ~$ansible all -m ping -u oyj -b
+192.168.56.101 | UNREACHABLE! => {
+    "changed": false, 
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host 192.168.56.101 port 22: Connection refused\r\n", 
+    "unreachable": true
+}
+
+#No warning of deprecation and ssh port default as 70
+oyj@Workstation-oyj-X555QG /etc/ansible$sudo vi /etc/ansible/ansible.cfg
+# some basic default values...
+...
+#inventory      = /etc/ansible/hosts
+#library        = /usr/share/my_modules/
+#module_utils   = /usr/share/my_module_utils/
+#remote_tmp     = ~/.ansible/tmp
+#local_tmp      = ~/.ansible/tmp
+#forks          = 5
+#poll_interval  = 15
+#sudo_user      = root
+#ask_sudo_pass = True
+#ask_pass      = True
+#transport      = smart
+#Let's change into 70
+remote_port    = 70
+#remote_port    = 22
+deprecation_warnings = False
+
+
+Testing.!
+oyj@Workstation-oyj-X555QG ~$ansible all -m ping
+192.168.56.101 | UNREACHABLE! => {
+    "changed": false, 
+    "msg": "Failed to connect to the host via ssh: ssh: connect to host 192.168.56.101 port 70: No route to host\r\n", 
+    "unreachable": true
+}
+
+OOps! There maybe firewall is on 192.168.56.101
+
+Let's open 70 port using firewall-cmd command.
+[root@Ct7-Test sysconfig]# firewall-cmd --permanent --add-port=70/tcp
+success
+[root@Ct7-Test sysconfig]# firewall-cmd --reload
+success
+[root@Ct7-Test sysconfig]# firewall-cmd --list-ports
+70/tcp
+
+
+
+
+7) 
+oyj@Workstation-oyj-X555QG ~$ansible all -m ping -u oyj -b
+192.168.56.101 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+oyj@Workstation-oyj-X555QG ~$
+
+It works! Good.
+
+8) Ubuntu xenial 16.04 sshd port change to 70
+oyj@Workstation-oyj-X555QG ~$ssh 192.168.56.102 -p 70
+
+oyj@u1:~$ cat /etc/ssh/sshd_config | grep -i port
+# What ports, IPs and protocols we listen for
+Port 70
+
+oyj@u1:~$ sudo netstat -tpln | grep 70
+tcp        0      0 0.0.0.0:70              0.0.0.0:*               LISTEN      2899/sshd       
+tcp6       0      0 :::70                   :::*                    LISTEN      2899/sshd     
+
+
+9)Adding ubuntu 192.168.56.102 to /etc/ansible/hosts
+root@Workstation-oyj-X555QG:/etc/ansible# vi hosts 
+192.168.56.101
+192.168.56.102
+
+-Test-
+yj@Workstation-oyj-X555QG ~$ansible all -m ping -u oyj -b
+192.168.56.101 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+192.168.56.102 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+oyj@Workstation-oyj-X555QG ~$ansible 192.168.56.102 -m ping -u oyj -b
+192.168.56.102 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+oyj@Workstation-oyj-X555QG ~$
+
+
+10) When u1 xenial hosts is running different ssh port such as 5555
+
+oyj@Workstation-oyj-X555QG /etc/ansible$sudo vi hosts 
+192.168.56.101
+192.168.56.102:5555
+
+-Test-
+oyj@Workstation-oyj-X555QG /etc/ansible$ansible all -m ping -u oyj -b
+192.168.56.102 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+192.168.56.101 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+
+
+11) Grouping
+For the convenience of reading, grouping could be on by '[]'.
+For example
+
+oyj@Workstation-oyj-X555QG ~$tail -4 /etc/ansible/hosts 
+# leading 0s:
+[Development]
+192.168.56.101
+192.168.56.102:5555
+
+
+
+
+
+--Using roles--
+Here,I will show how to install apache2 onto ubuntu server, and httpd package onto centos7 server.
+oyj@Workstation-oyj-X555QG /etc/ansible/roles$sudo mkdir -p example/tasks
+oyj@Workstation-oyj-X555QG /etc/ansible/roles$cd example/tasks/
+oyj@Workstation-oyj-X555QG /etc/ansible/roles/example/tasks$
+
+
+oyj@Workstation-oyj-X555QG /etc/ansible/roles/example/tasks$sudo vi centos.yml
+
+
+#roles/example/tasks/centos.yml
+- yum:
+   name: "httpd"
+   state: installed
+
+- service:
+   name: httpd
+   state: started
+
+
+oyj@Workstation-oyj-X555QG /etc/ansible/roles/example/tasks$sudo vi ubuntu.yml
+#roles/example/tasks/ubuntu.yml
+- apt:
+    name: "apache2"
+    state: installed
+- service: 
+    name: apache2
+    state: started
+
+
+
+
+
+
+oyj@Workstation-oyj-X555QG /etc/ansible/roles/example/tasks$cat main.yml 
+   - include_tasks: centos.yml
+     when: ansible_distribution == 'CentOS'
+   - include_tasks: ubuntu.yml
+     when: ansible_os_family == 'Debian'
+
+oyj@Workstation-oyj-X555QG ~$cd /etc/ansible/
+oyj@Workstation-oyj-X555QG /etc/ansible$cat webservers.yml 
+- hosts: Development
+  roles:
+     - example
+
+
+
+
+oyj@Workstation-oyj-X555QG /etc/ansible$ansible-playbook webservers.yml -b
+
+PLAY [Development] **************************************************************************************************************
+
+TASK [Gathering Facts] **********************************************************************************************************
+ok: [192.168.56.101]
+ok: [192.168.56.102]
+
+TASK [example : include_tasks] **************************************************************************************************
+skipping: [192.168.56.102]
+included: /etc/ansible/roles/example/tasks/centos.yml for 192.168.56.101
+
+TASK [example : yum] ************************************************************************************************************
+changed: [192.168.56.101]
+
+TASK [example : service] ********************************************************************************************************
+changed: [192.168.56.101]
+
+TASK [example : include_tasks] **************************************************************************************************
+skipping: [192.168.56.101]
+included: /etc/ansible/roles/example/tasks/ubuntu.yml for 192.168.56.102
+
+TASK [example : apt] ************************************************************************************************************
+changed: [192.168.56.102]
+
+TASK [example : service] ********************************************************************************************************
+ok: [192.168.56.102]
+
+PLAY RECAP **********************************************************************************************************************
+192.168.56.101             : ok=4    changed=2    unreachable=0    failed=0   
+192.168.56.102             : ok=4    changed=1    unreachable=0    failed=0   
+
+--Now test--
+oyj@Workstation-oyj-X555QG /etc/ansible$telnet 192.168.56.101 80
+Trying 192.168.56.101...
+telnet: Unable to connect to remote host: No route to host
+
+--I had to open firewall by --
+[root@Ct7-Test ~]# firewall-cmd --permanent --add-port=80/tcp
+success
+[root@Ct7-Test ~]# firewall-cmd --reload
+success
+
+
+
+oyj@Workstation-oyj-X555QG /etc/ansible$telnet 192.168.56.102 80
+Trying 192.168.56.102...
+Connected to 192.168.56.102.
+Escape character is '^]'.
+^C
+Connection closed by foreign host.
+
+oyj@Workstation-oyj-X555QG /etc/ansible$telnet 192.168.56.101 80
+Trying 192.168.56.101...
+telnet: Unable to connect to remote host: No route to host
+oyj@Workstation-oyj-X555QG /etc/ansible$ping 192.168.56.101
+PING 192.168.56.101 (192.168.56.101) 56(84) bytes of data.
+64 bytes from 192.168.56.101: icmp_seq=1 ttl=64 time=0.442 ms
+64 bytes from 192.168.56.101: icmp_seq=2 ttl=64 time=0.562 ms
+^C
+--- 192.168.56.101 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1012ms
+rtt min/avg/max/mdev = 0.442/0.502/0.562/0.060 ms
+oyj@Workstation-oyj-X555QG /etc/ansible$telnet 192.168.56.101 80
+Trying 192.168.56.101...
+Connected to 192.168.56.101.
+Escape character is '^]'.
+
+
+
+^^; Everything is ok. Todo is compiling or configuration more delicately.
+
+
+
+**ntp**
+oyj@Workstation-oyj-X555QG ~$ansible all -a 'date'
+192.168.56.102 | SUCCESS | rc=0 >>
+Mon Mar 19 02:05:50 KST 2018
+
+192.168.56.101 | SUCCESS | rc=0 >>
+2018. 03. 18. (일) 13:05:50 EDT
+
+**So, I need to configure ntp daemon **
+
+**Using ansible-galaxy to configure ntp quickly**
+oyj@Workstation-oyj-X555QG ~$ansible-galaxy install geerlingguy.ntp
+- downloading role 'ntp', owned by geerlingguy
+- downloading role from https://github.com/geerlingguy/ansible-role-ntp/archive/1.5.3.tar.gz
+- extracting geerlingguy.ntp to /home/oyj/.ansible/roles/geerlingguy.ntp
+- geerlingguy.ntp (1.5.3) was installed successfully
+
+***Timezone to Asia/Seoul***
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/geerlingguy.ntp$cat vars/main.yml 
+ntp_timezone: Asia/Seoul
+
+
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/geerlingguy.ntp/defaults$vi ~/.ansible/roles/geerlingguy.ntp/defaults/main.yml 
+---
+ntp_enabled: true
+#Change time zone to Asia/Seoul where I live.
+ntp_timezone: Asia/Seoul
+
+#From false to true
+ntp_manage_config: true
+
+# NTP server area configuration (leave empty for 'Worldwide').
+# See: http://support.ntp.org/bin/view/Servers/NTPPoolServers
+ntp_area: '.asia'
+ntp_servers:
+  - "0{{ ntp_area }}.pool.ntp.org iburst"
+  - "1{{ ntp_area }}.pool.ntp.org iburst"
+  - "2{{ ntp_area }}.pool.ntp.org iburst"
+  - "3{{ ntp_area }}.pool.ntp.org iburst"
+
+ntp_restrict:
+  - "127.0.0.1"
+  - "::1"
+
+**On ubuntu xenial server, I need to add ntpstat package to check sync status **
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/geerlingguy.ntp/tasks$vi ~/.ansible/roles/geerlingguy.ntp/tasks/main.yml 
+
+#Added part
+- name: Ensure ntpstat package is installed (Debian).
+  package:
+    name: ntpstat
+    state: present
+  when: ansible_os_family == "Debian"
+#CentOS7 use chronyd as default time daemon. Anyhow when you want to use ntpd, you have to disable chronyd.
+- name: Ensure chronyd stopd when Centos7 is ths os
+  service:
+    name: chronyd
+    state: stopped
+    enabled: no
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
+
+
+
+#Before adding ntpstat.
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/geerlingguy.ntp/tasks$ansible all -a 'ntpstat'
+192.168.56.102 | FAILED | rc=2 >>
+[Errno 2] No such file or directory
+
+192.168.56.101 | SUCCESS | rc=0 >>
+synchronised to NTP server (106.247.248.106) at stratum 3 
+   time correct to within 64 ms
+   polling server every 256 s
+
+
+
+
+*Create ntp.yml
+oyj@Workstation-oyj-X555QG ~/.ansible$ls
+cp  ntp.yml  roles  tmp
+oyj@Workstation-oyj-X555QG ~/.ansible$vi ntp.yml 
+
+- hosts: Development
+  roles:
+    - geerlingguy.ntp
+~                      
+
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible-playbook ntp.yml -b
+
+oyj@Workstation-oyj-X555QG ~$ansible-playbook .ansible/ntp.yml -b
+[DEPRECATION WARNING]: The use of 'include' for tasks has been deprecated. Use 'import_tasks' for static inclusions or 'include_tasks' for dynamic inclusions. 
+This feature will be removed in a future release. Deprecation warnings can be disabled by setting deprecation_warnings=False in ansible.cfg.
+[DEPRECATION WARNING]: include is kept for backwards compatibility but usage is discouraged. The module documentation details page may explain more about this 
+rationale.. This feature will be removed in a future release. Deprecation warnings can be disabled by setting deprecation_warnings=False in ansible.cfg.
+
+PLAY [Development] *********************************************************************************************************************************************
+
+TASK [Gathering Facts] *****************************************************************************************************************************************
+ok: [192.168.56.101]
+ok: [192.168.56.102]
+
+TASK [geerlingguy.ntp : Include OS-specific variables.] ********************************************************************************************************
+ok: [192.168.56.101]
+ok: [192.168.56.102]
+
+TASK [geerlingguy.ntp : Ensure NTP-related packages are installed.] ********************************************************************************************
+ok: [192.168.56.101]
+ok: [192.168.56.102]
+
+TASK [geerlingguy.ntp : Ensure tzdata package is installed (Linux).] *******************************************************************************************
+ok: [192.168.56.101]
+ok: [192.168.56.102]
+
+TASK [geerlingguy.ntp : Ensure ntpstat package is installed (Debian).] *****************************************************************************************
+skipping: [192.168.56.101]
+changed: [192.168.56.102]
+
+TASK [geerlingguy.ntp : Check if clock file exists.] ***********************************************************************************************************
+skipping: [192.168.56.101]
+skipping: [192.168.56.102]
+
+TASK [geerlingguy.ntp : Create clock file if it doesn't exist.] ************************************************************************************************
+skipping: [192.168.56.101]
+skipping: [192.168.56.102]
+
+TASK [geerlingguy.ntp : Set timezone] **************************************************************************************************************************
+ok: [192.168.56.102]
+ok: [192.168.56.101]
+
+TASK [geerlingguy.ntp : Ensure NTP is running and enabled as configured.] **************************************************************************************
+ok: [192.168.56.102]
+ok: [192.168.56.101]
+
+TASK [geerlingguy.ntp : Ensure NTP is stopped and disabled as configured.] *************************************************************************************
+skipping: [192.168.56.101]
+skipping: [192.168.56.102]
+
+TASK [geerlingguy.ntp : Generate ntp.conf file] ****************************************************************************************************************
+ok: [192.168.56.102]
+ok: [192.168.56.101]
+
+PLAY RECAP *****************************************************************************************************************************************************
+192.168.56.101             : ok=8    changed=0    unreachable=0    failed=0   
+192.168.56.102             : ok=8    changed=1    unreachable=0    failed=0   
+
+
+***Now check ntpstat***
+oyj@Workstation-oyj-X555QG ~$ansible all -a 'ntpstat'
+192.168.56.102 | SUCCESS | rc=0 >>
+synchronised to NTP server (172.105.232.39) at stratum 3 
+   time correct to within 252 ms
+   polling server every 128 s
+
+192.168.56.101 | SUCCESS | rc=0 >>
+synchronised to NTP server (106.247.248.106) at stratum 3 
+   time correct to within 66 ms
+   polling server every 256 s
+
+oyj@Workstation-oyj-X555QG ~$ansible all -a 'date'
+192.168.56.102 | SUCCESS | rc=0 >>
+Mon Mar 19 16:24:50 KST 2018
+
+192.168.56.101 | SUCCESS | rc=0 >>
+2018. 03. 19. (월) 16:24:51 KST
+
+***Well it is OK^^; ***
+
+
+
+
+oyj@Workstation-oyj-X555QG ~$sudo vi /etc/ansible/hosts 
+***Adding One more managed server (centos6-virtualbox)***
+
+[Development]
+192.168.56.101
+192.168.56.102:5555
+192.168.56.103
+
+oyj@Workstation-oyj-X555QG ~$ansible 192.168.56.103 -m ping
+192.168.56.103 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+
+
+***Only apply ntp playbook to 192.168.56.103 ***
+
+oyj@Workstation-oyj-X555QG ~$ansible-playbook ~/.ansible/ntp.yml --limit 192.168.56.103 -b
+
+
+PLAY [Development] ***********************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************
+ok: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Include OS-specific variables.] **********************************************
+ok: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Ensure NTP-related packages are installed.] **********************************
+ok: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Ensure tzdata package is installed (Linux).] *********************************
+ok: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Ensure ntpstat package is installed (Debian).] *******************************
+skipping: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Test telnet package installed (Centos)] **************************************
+ok: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Check if clock file exists.] *************************************************
+ok: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Create clock file if it doesn't exist.] **************************************
+skipping: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Set timezone] ****************************************************************
+ok: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Ensure NTP is running and enabled as configured.] ****************************
+changed: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Ensure NTP is stopped and disabled as configured.] ***************************
+skipping: [192.168.56.103]
+
+TASK [geerlingguy.ntp : Generate ntp.conf file] ******************************************************
+changed: [192.168.56.103]
+
+RUNNING HANDLER [geerlingguy.ntp : restart ntp] ******************************************************
+changed: [192.168.56.103]
+
+PLAY RECAP *******************************************************************************************
+192.168.56.103             : ok=10   changed=3    unreachable=0    failed=0   
+
+***Test***
+oyj@Workstation-oyj-X555QG ~$ansible 192.168.56.103 -a 'ntpstat'
+192.168.56.103 | SUCCESS | rc=0 >>
+synchronised to NTP server (92.223.73.5) at stratum 4 
+   time correct to within 998 ms
+   polling server every 64 s
+
+oyj@Workstation-oyj-X555QG ~$ansible 192.168.56.103 -a 'date'
+192.168.56.103 | SUCCESS | rc=0 >>
+2018. 03. 19. (월) 20:20:05 KST
+
+
+#Hostname change for easy management
+
+oyj@Workstation-oyj-X555QG ~/.ansible$cat /etc/hosts
+
+192.168.56.101  ct7
+192.168.56.102  u16
+192.168.56.103  ct6
+
+oyj@Workstation-oyj-X555QG ~/.ansible$cat /etc/ansible/hosts 
+[Development]
+ct7 
+u16:5555
+ct6
+
+**Centos ntpd daemon enable with 'systemctl command'***
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible ct7 -a 'systemctl enable ntpd' -b
+
+ct7 | SUCCESS | rc=0 >>
+
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible ct7 -a 'systemctl restart ntpd' -b
+ct7 | SUCCESS | rc=0 >>
+
+
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible ct7 -a 'ntpstat'
+ct7 | SUCCESS | rc=0 >>
+synchronised to NTP server (103.18.128.60) at stratum 3 
+   time correct to within 1047 ms
+   polling server every 64 s
+
+
+
+*** java9 install using script ***
+
+oyj@Workstation-oyj-X555QG:~/.ansible$ vi download_java.sh 
+#!/usr/bin/env bash
+JAVA_VERSION="9.0.4"
+TARGET_DIR="/usr/local"
+
+path_check(){
+  CHECK=$(echo $PATH | grep -i $JAVA_VERSION/bin)
+  if [[ $CHECK != "" ]]
+  then
+     echo "java $JAVA_VERSION ALREADY INSTALLED"
+  else
+     echo "PATH=/usr/local/jdk-$JAVA_VERSION/bin:$PATH" >> /etc/profile
+     source /etc/profile
+  fi
+}
+
+download_oracle(){
+ wget --no-cookies --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/9.0.4+11/c2514751926b4512b076cc82f959763f/jdk-9.0.4_linux-x64_bin.tar.gz -O $TARGET_DIR/java-9.tar.gz
+ cd $TARGET_DIR;
+ tar xvzf java-9.tar.gz
+} 
+
+
+if [[ -x $TARGET_DIR/jdk-$JAVA_VERSION/bin/java ]]
+then
+ echo "java already installed"
+ source /etc/profile
+ path_check
+else
+ download_oracle
+ path_check
+fi
+
+oyj@Workstation-oyj-X555QG:~/.ansible$ vi java9.yml
+
+---
+- name: Java install
+  hosts: Development
+  vars:
+     java_version: 9.0.4
+
+
+  tasks:
+     #- name: Download java
+     - script: ./download_java.sh
+
+     - debug:
+         msg: "System {{ inventory_hostname }} installed  jdk {{ java_version }}"
+~                                                                                                                                             
+~                                                                             
+
+
+oyj@Workstation-oyj-X555QG:~/.ansible$ ansible-playbook java9.yml -b
+
+PLAY [Java install] ****************************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************
+ok: [u16]
+ok: [ct7]
+ok: [ct6]
+
+TASK [script] **********************************************************************************************************************************
+changed: [u16]
+changed: [ct7]
+changed: [ct6]
+
+TASK [debug] ***********************************************************************************************************************************
+ok: [ct7] => {
+    "msg": "System ct7 installed jdk 9.0.4"
+}
+ok: [ct6] => {
+    "msg": "System ct6  installed jdk 9.0.4"
+}
+ok: [u16] => {
+    "msg": "System u16  installed jdk 9.0.4"
+}
+
+PLAY RECAP *************************************************************************************************************************************
+ct6                        : ok=3    changed=1    unreachable=0    failed=0   
+ct7                        : ok=3    changed=1    unreachable=0    failed=0   
+u16                        : ok=3    changed=1    unreachable=0    failed=0   
+
+
+
+
+oyj@Workstation-oyj-X555QG:~/.ansible$ ansible all -a '/usr/local/jdk-9.0.4/bin/java -version' 
+u16 | SUCCESS | rc=0 >>
+java version "9.0.4"
+Java(TM) SE Runtime Environment (build 9.0.4+11)
+Java HotSpot(TM) 64-Bit Server VM (build 9.0.4+11, mixed mode)
+
+ct7 | SUCCESS | rc=0 >>
+java version "9.0.4"
+Java(TM) SE Runtime Environment (build 9.0.4+11)
+Java HotSpot(TM) 64-Bit Server VM (build 9.0.4+11, mixed mode)
+
+ct6 | SUCCESS | rc=0 >>
+java version "9.0.4"
+Java(TM) SE Runtime Environment (build 9.0.4+11)
+Java HotSpot(TM) 64-Bit Server VM (build 9.0.4+11, mixed mode)
+
+
+#Well I could install java 9.0.4 version on 3 linux servers on the same time. This is very productive and practical#
+
+
+
+
+
+******************
+Now I want to set hostname ct7 as tomcat-ct7 without login server, which I use as a java servlet engine.
+
+oyj@Workstation-oyj-X555QG ~$ansible ct7 -a 'hostnamectl set-hostname tomcat-ct7-dev' -b
+ct7 | SUCCESS | rc=0 >>
+
+
+oyj@Workstation-oyj-X555QG ~$ansible ct7 -a 'hostname'
+ct7 | SUCCESS | rc=0 >>
+tomcat-ct7-dev
+
+Good! For the convenience, I modify ct7 to tomcat-ct7-dev.
+
+oyj@Workstation-oyj-X555QG ~$sudo vi /etc/ansible/hosts 
+
+#Application tomcat server
+
+[appdev]
+tomcat-ct7-dev
+
+oyj@Workstation-oyj-X555QG ~$sudo vi /etc/hosts
+192.168.56.101  tomcat-ct7-dev ct7
+
+*** I changed /etc/ansible/ansible.cfg's inventory dir to ~/.ansible/hosts ***
+
+
+oyj@Workstation-oyj-X555QG ~/.ansible$cp /etc/ansible/hosts ~/.ansible/
+
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible-playbook tomcat.yml --list-hosts
+
+playbook: tomcat.yml
+
+  play #1 (appdev): tomcat install stable	TAGS: []
+    pattern: [u'appdev']
+    hosts (1):
+      tomcat-ct7-dev
+
+#First test , just download
+oyj@Workstation-oyj-X555QG ~/.ansible$cat tomcat.yml 
+---
+- name: tomcat install stable
+  hosts: appdev
+  vars:
+     tomcat_version: 8.0.5
+
+
+  tasks:
+     - name: Download tomcat tomcat_version
+       get_url:
+          url: http://mirror.navercorp.com/apache/tomcat/tomcat-8/v8.5.29/bin/apache-tomcat-8.5.29.tar.gz
+          dest: /usr/local
+          checksum: sha1:fdc2ac85282af82a494e352c35e33dcfe1dbab6b
+     
+     #- script: ./download_java.sh
+
+     - debug:
+         msg: "System {{ inventory_hostname }} installed  tomcat {{ tomcat_version }}"
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible-playbook  tomcat.yml -b
+
+PLAY [tomcat install stable] **********************************************************************************************************************************************************
+
+TASK [Gathering Facts] ****************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev]
+
+TASK [Download tomcat tomcat_version] *************************************************************************************************************************************************
+changed: [tomcat-ct7-dev]
+
+TASK [debug] **************************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev] => {
+    "msg": "System tomcat-ct7-dev installed  tomcat 8.0.5"
+}
+
+PLAY RECAP ****************************************************************************************************************************************************************************
+tomcat-ct7-dev             : ok=3    changed=1    unreachable=0    failed=0   
+
+
+
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible -i hosts tomcat-ct7-dev -a 'ls /usr/local/apache-tomcat-8.5.29.tar.gz'
+tomcat-ct7-dev | SUCCESS | rc=0 >>
+/usr/local/apache-tomcat-8.5.29.tar.gz
+
+###Well, I would like to untar tomcat apache-tomcat-8.5.29.tar.gz ###
+oyj@Workstation-oyj-X555QG ~/.ansible$cat tomcat.yml 
+---
+- name: tomcat install stable
+  hosts: appdev
+  vars:
+     tomcat_version: 8.5.29
+     target_dir: /usr/local
+     mirror_host: mirror.navercorp.com
+     java_home: /usr/local/jdk-9.0.4
+     tomcat_home: /usr/local/apache-tomcat-8.5.29
+
+  tasks:
+     - name: Download tomcat tomcat_version
+       get_url:
+          url: "http://{{ mirror_host }}/apache/tomcat/tomcat-8/v8.5.29/bin/apache-tomcat-8.5.29.tar.gz"
+          dest: "{{ target_dir }}"
+          checksum: sha1:fdc2ac85282af82a494e352c35e33dcfe1dbab6b
+       register: get_tomcat
+     
+
+     - debug:
+         msg: "System {{ inventory_hostname }} download  tomcat  {{ tomcat_version }} on server"
+       when: get_tomcat|changed
+
+
+     - name: "Untar apache-tomcat-{{ tomcat_version }}"
+       unarchive :
+         src: "{{ target_dir}}/apache-tomcat-{{ tomcat_version }}.tar.gz"
+         dest: "{{ target_dir }}"
+         remote_src: yes
+          
+
+     - debug:
+         msg: "System {{ inventory_hostname }} untar tomcat {{ tomcat_version }}"
+
+
+
+     - name: "Add tomcat group"
+       group:
+         name: tomcat
+         state: present
+         gid: 321
+
+    
+     - name: "Add tomcat user"
+       user:
+           name: tomcat
+           shell: /bin/false
+           group: tomcat
+           uid:   123
+
+     - name: "Add JAVA_HOME TO /etc/profile"
+       template: src=templates/java.sh.j2 dest=/etc/profile.d/java.sh
+         mode=0644
+
+
+     - debug:
+         msg: "Add java_home to /etc/profile" 
+
+
+     - shell: |
+         chgrp -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}"
+         chmod -R g+r  "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/conf"
+         chmod  g+x  "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/conf"
+         chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/webapps"
+         chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/work"
+         chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/temp"
+         chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/logs"
+
+
+     - debug:
+         msg: "Ownership set {{ target_dir }}/apache-tomcat-{{ tomcat_version }}" 
+
+
+     - name: "Tomcat {{ tomcat_version }} systemd service add"
+       template: src=templates/tomcat_service.j2 dest=/etc/systemd/system/tomcat.service
+         mode=0755
+
+  
+     - debug:
+         msg: "Tomcat {{ tomcat_version }} add to systemd service" 
+
+
+     - shell: |
+         systemctl daemon-reload
+         systemctl enable tomcat
+         systemctl start tomcat
+         #Firewall8080 open
+         firewall-cmd --permanent --add-port=8080/tcp 
+         firewall-cmd --reload
+
+     - debug:
+         msg: "Tomcat {{ tomcat_version }} add to systemd service start and firewall open" 
+
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible-playbook tomcat.yml -b
+
+PLAY [tomcat install stable] **********************************************************************************************************************************************************
+
+TASK [Gathering Facts] ****************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev]
+
+TASK [Download tomcat tomcat_version] *************************************************************************************************************************************************
+changed: [tomcat-ct7-dev]
+
+TASK [debug] **************************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev] => {
+    "msg": "System tomcat-ct7-dev download  tomcat  8.5.29 on server"
+}
+
+TASK [Untar apache-tomcat-8.5.29] *****************************************************************************************************************************************************
+changed: [tomcat-ct7-dev]
+
+TASK [debug] **************************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev] => {
+    "msg": "System tomcat-ct7-dev untar tomcat 8.5.29"
+}
+
+TASK [Add tomcat group] ***************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev]
+
+TASK [Add tomcat user] ****************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev]
+
+TASK [Add JAVA_HOME TO /etc/profile] **************************************************************************************************************************************************
+changed: [tomcat-ct7-dev]
+
+TASK [debug] **************************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev] => {
+    "msg": "Add java_home to /etc/profile"
+}
+
+TASK [shell] **************************************************************************************************************************************************************************
+ [WARNING]: Consider using the file module with group rather than running chgrp.  If you need to use command because file is insufficient you can add warn=False to this command task
+or set command_warnings=False in ansible.cfg to get rid of this message.
+
+changed: [tomcat-ct7-dev]
+
+TASK [debug] **************************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev] => {
+    "msg": "Ownership set /usr/local/apache-tomcat-8.5.29"
+}
+
+TASK [Tomcat 8.5.29 systemd service add] **********************************************************************************************************************************************
+changed: [tomcat-ct7-dev]
+
+TASK [debug] **************************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev] => {
+    "msg": "Tomcat 8.5.29 add to systemd service"
+}
+
+TASK [shell] **************************************************************************************************************************************************************************
+changed: [tomcat-ct7-dev]
+
+TASK [debug] **************************************************************************************************************************************************************************
+ok: [tomcat-ct7-dev] => {
+    "msg": "Tomcat 8.5.29 add to systemd service start and firewall open"
+}
+
+PLAY RECAP ****************************************************************************************************************************************************************************
+tomcat-ct7-dev             : ok=15   changed=6    unreachable=0    failed=0   
+
+
+
+
+oyj@Workstation-oyj-X555QG ~/.ansible$telnet tomcat-ct7-dev 8080
+Trying 192.168.56.101...
+Connected to tomcat-ct7-dev.
+Escape character is '^]'.
+
+
+###Well, OK.good!###
