@@ -13,6 +13,26 @@
     state: present
   when: ansible_system == "Linux"
 
+- name: Ensure ntpstat package is installed (Debian).
+  package:
+    name: ntpstat
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Ensure libselinux-python is installed
+  package:
+    name: libselinux-python
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+#CentOS7 use chronyd as default time daemon. Anyhow when you want to use ntpd, you have to disable chronyd.
+- name: Ensure chronyd stopd when Centos7 is ths os
+  service:
+    name: chronyd
+    state: stopped
+    enabled: no
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
+
 - include: clock-rhel-6.yml
   when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '6'
 
