@@ -12,12 +12,13 @@
          name: wget
          state: present
 
+     - name: Ensure java.sh into /etc/profile.d
+       template: src=templates/java.sh.j2 dest=/etc/profile.d/java.sh
+          mode=0644
+         
      #- name: Download java
      - script: ./download_java.sh
 
      - debug:
          msg: "System {{ inventory_hostname }} installed  jdk {{ java_version }} in {{ java_home }}"
 
-     - name: Ensure java.sh into /etc/profile.d
-       template: src=template/java.sh.j2 dest/etc/profile.d/java.sh
-     
