@@ -1,12 +1,14 @@
 ---
 - name: tomcat install stable
-  hosts: appdev
+  hosts: app
   vars:
      tomcat_version: 8.5.29
      target_dir: /usr/local
      mirror_host: mirror.navercorp.com
      java_home: /usr/local/jdk-9.0.4
      tomcat_home: /usr/local/apache-tomcat-8.5.29
+     tomcat_http_port: 8080
+     ssh_port: 70
 
   tasks:
      - name: Download tomcat tomcat_version
@@ -48,7 +50,7 @@
            group: tomcat
            uid:   123
 
-     - name: "Add JAVA_HOME TO /etc/profile"
+     - name: "Add JAVA_HOME TO /etc/profile.d/"
        template: src=templates/java.sh.j2 dest=/etc/profile.d/java.sh
          mode=0644
 
@@ -85,8 +87,14 @@
          systemctl enable tomcat
          systemctl start tomcat
          #Firewall8080 open
-         firewall-cmd --permanent --add-port=8080/tcp 
-         firewall-cmd --reload
+         #firewall-cmd --permanent --add-port=8080/tcp 
+         #firewall-cmd --reload
 
      - debug:
-         msg: "Tomcat {{ tomcat_version }} add to systemd service start and firewall open" 
+         msg: "Tomcat {{ tomcat_version }} add to systemd service start" 
+
+     - include: firewalled_tomcat.yml
+       when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
+     
+     - debug:
+         msg: "For Centos7 only,Enable firewalld service and open Tomcat {{ tomcat_http_port }} and {{ ssh_port }}  firewalld open" 
