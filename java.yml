@@ -1,13 +1,19 @@
 ---
 - name: Java install
-  hosts: Development
+  hosts: vagdev
   vars:
      java_version: 9.0.4
 
 
   tasks:
+     - name: Ensure wget package installed
+       package:
+         name: wget
+         state: present
+
      #- name: Download java
      - script: ./download_java.sh
 
      - debug:
          msg: "System {{ inventory_hostname }} installed  jdk {{ java_version }}"
+
