@@ -3,6 +3,7 @@
   hosts: vagdev
   vars:
      java_version: 9.0.4
+     java_home: /usr/local/jdk-9.0.4
 
 
   tasks:
@@ -15,5 +16,8 @@
      - script: ./download_java.sh
 
      - debug:
-         msg: "System {{ inventory_hostname }} installed  jdk {{ java_version }}"
+         msg: "System {{ inventory_hostname }} installed  jdk {{ java_version }} in {{ java_home }}"
 
+     - name: Ensure java.sh into /etc/profile.d
+       template: src=template/java.sh.j2 dest/etc/profile.d/java.sh
+     
