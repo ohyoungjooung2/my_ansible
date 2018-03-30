@@ -1,0 +1,36 @@
+---
+- include: useradd.yml
+- include: downuntar.yml
+- include: ownership.yml
+
+- name: "Add JAVA_HOME TO /etc/profile.d/"
+  template: src=templates/java.sh.j2 dest=/etc/profile.d/java.sh
+     mode=0644
+
+- debug:
+    msg: "Add java_home to /etc/profile.d" 
+
+
+- name: "Tomcat {{ tomcat_version }} systemd service add"
+  template: src=templates/tomcat_service.j2 dest=/etc/systemd/system/tomcat.service
+     mode=0755
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
+  
+- debug:
+    msg: "Tomcat {{ tomcat_version }} add to systemd service" 
+
+
+- shell: |
+    systemctl daemon-reload
+    systemctl enable tomcat
+    systemctl start tomcat
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
+
+- debug:
+    msg: "Tomcat {{ tomcat_version }} add to systemd service start" 
+
+- include: firewalled_tomcat.yml
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
+     
+- debug:
+   msg: "For Centos7 only,Enable firewalld service and open Tomcat {{ tomcat_http_port }} and {{ ssh_port }}  firewalld open" 

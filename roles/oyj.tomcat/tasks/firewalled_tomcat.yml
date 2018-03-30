@@ -1,0 +1,11 @@
+---
+- name: Run firewalld daemon and enable when not enabled.
+  systemd:
+    name: firewalld
+    state: started
+    enabled: true
+
+- shell: |
+       firewall-cmd --permanent --add-port={{ tomcat_http_port }}/tcp
+       firewall-cmd --permanent --add-port={{ ssh_port }}/tcp
+       firewall-cmd --reload

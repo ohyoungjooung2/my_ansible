@@ -1,0 +1,11 @@
+---
+tomcat_version: 8.5.29
+target_dir: /usr/local
+mirror_host: mirror.navercorp.com
+java_home: /usr/local/jdk-9.0.4
+tomcat_home: /usr/local/apache-tomcat-8.5.29
+tomcat_http_port: 8080
+ssh_port: 22
+tomcat_user: tomcat
+tomcat_group: tomcat
+

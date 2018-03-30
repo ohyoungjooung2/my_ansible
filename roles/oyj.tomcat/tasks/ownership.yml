@@ -1,0 +1,13 @@
+---
+- shell: |
+    chgrp -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}"
+    chmod -R g+r  "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/conf"
+    chmod  g+x  "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/conf"
+    chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/webapps"
+    chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/work"
+    chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/temp"
+    chown -R tomcat "{{ target_dir }}/apache-tomcat-{{ tomcat_version }}/logs"
+
+
+- debug:
+    msg: "Ownership set {{ target_dir }}/apache-tomcat-{{ tomcat_version }}"

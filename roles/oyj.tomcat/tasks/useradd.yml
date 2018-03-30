@@ -1,0 +1,15 @@
+---
+- name: "Add tomcat group"
+  group:
+    name: "{{ tomcat_group }}"
+    state: present
+    gid: 321
+
+    
+- name: "Add tomcat user"
+  user:
+    name: "{{ tomcat_user }}"
+    shell: /bin/false
+    group: "{{ tomcat_group }}"
+    uid:   123
+

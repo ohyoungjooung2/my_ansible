@@ -1,0 +1,23 @@
+---
+- name: "Download tomcat {{ tomcat_version }}"
+  get_url:
+     url: "http://{{ mirror_host }}/apache/tomcat/tomcat-8/v8.5.29/bin/apache-tomcat-8.5.29.tar.gz"
+     dest: "{{ target_dir }}"
+     checksum: sha1:fdc2ac85282af82a494e352c35e33dcfe1dbab6b
+  register: get_tomcat
+     
+
+- debug:
+      msg: "System {{ inventory_hostname }} download  tomcat  {{ tomcat_version }} on server"
+  when: get_tomcat|changed
+
+
+- name: "Untar apache-tomcat-{{ tomcat_version }}"
+  unarchive :
+      src: "{{ target_dir}}/apache-tomcat-{{ tomcat_version }}.tar.gz"
+      dest: "{{ target_dir }}"
+      remote_src: yes 
+     
+
+- debug:
+      msg: "System {{ inventory_hostname }} untar tomcat {{ tomcat_version }}"
