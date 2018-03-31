@@ -30,8 +30,13 @@ ansible 2.5.0
   executable location = /usr/bin/ansible
   python version = 2.7.12 (default, Dec  4 2017, 14:50:18) [GCC 5.4.0 20160609]
 
+
 Not to be complicated, we'd better remove /etc/ansible/ansible.cfg and use ~/.ansible/ansible.cfg as a default.
+
+
 oyj@Workstation-oyj-X555QG ~/.ansible$sudo rm -f /etc/ansible/ansible.cfg
+oyj@Workstation-oyj-X555QG ~/.ansible$echo "export ANSIBLE_CONFIG=~/.ansible/ansible.cfg" >> ~/.bashrc
+
 
 
 #As a Linux admin taste, I do not want to use /etc/ansible/hosts as a ansible hosts main and deprecation warning message.
