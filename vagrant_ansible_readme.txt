@@ -1483,3 +1483,481 @@ ct7vag                     : ok=18   changed=8    unreachable=0    failed=0
 
 
 
+##########################################################################################################################################################################
+Goal:
+     This playbook of tomcat role only works for centos7 but I want to this work for centos6 that use "chkconfig and services" instead of systemd and systemctl.
+     Also, I want to collate java_role and tomcat_role.
+###########################################################################################################################################################################
+First I added centos6 part to main.yml like belows.
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/oyj.tomcat$vi tasks/main.yml 
+---
+- include: useradd.yml
+- include: downuntar.yml
+- include: ownership.yml
+
+- name: "Add JAVA_HOME TO /etc/profile.d/"
+  template: src=templates/java.sh.j2 dest=/etc/profile.d/java.sh
+     mode=0644
+
+- debug:
+    msg: "Add java_home to /etc/profile.d" 
+
+
+- name: "Tomcat {{ tomcat_version }} systemd add"
+  template: src=templates/tomcat_service.j2 dest=/etc/systemd/system/tomcat.service
+     mode=0755
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
+  
+- debug:
+    msg: "Tomcat {{ tomcat_version }} add to systemd service" 
+
+- shell: |
+    systemctl daemon-reload
+    systemctl enable tomcat
+    systemctl start tomcat
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
+
+- debug:
+    msg: "Tomcat {{ tomcat_version }} add to systemd service start" 
+
+
+- name: "Tomcat {{ tomcat_version }} service add"
+  template: src=templates/centos6_tomcat_service.j2 dest=/etc/init.d/tomcat
+     mode=0755
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '6'
+
+- name: "Start {{ tomcat_version }} service start"
+  service:
+     name: tomcat
+     state: started
+     enabled: yes
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '6'
+
+
+
+- include: firewalled_tomcat.yml
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
+     
+- debug:
+   msg: "For Centos7 only,Enable firewalld service and open Tomcat {{ tomcat_http_port }} and {{ ssh_port }}  firewalld open" 
+
+#Start script
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/oyj.tomcat$cat templates/centos6_tomcat_service.j2 
+#!/bin/bash
+#
+# tomcat8
+#
+# chkconfig: - 80 20
+#
+### BEGIN INIT INFO
+# Provides: tomcat8
+# Required-Start: $network $syslog
+# Required-Stop: $network $syslog
+# Default-Start:
+# Default-Stop:
+# Description: Tomcat 8
+# Short-Description: start and stop tomcat
+### END INIT INFO
+### This script is from "https://www.rosehosting.com/blog/how-to-install-tomcat-8-on-a-centos-6-vps/"
+## Source function library.
+#. /etc/rc.d/init.d/functions
+export JAVA_HOME="{{ java_home }}"
+export JAVA_OPTS="-Dfile.encoding=UTF-8 \
+  -Dnet.sf.ehcache.skipUpdateCheck=true \
+  -XX:+UseConcMarkSweepGC \
+  -XX:+CMSClassUnloadingEnabled \
+  -XX:+UseParNewGC \
+  -XX:MaxPermSize=128m \
+  -Xms512m -Xmx512m"
+export PATH=$JAVA_HOME/bin:$PATH
+TOMCAT_HOME={{ tomcat_home }}
+TOMCAT_USER={{ tomcat_user }}
+SHUTDOWN_WAIT=20
+
+tomcat_pid() {
+  echo `ps aux | grep org.apache.catalina.startup.Bootstrap | grep -v grep | awk '{ print $2 }'`
+}
+
+start() {
+  pid=$(tomcat_pid)
+  if [ -n "$pid" ] 
+  then
+    echo "Tomcat is already running (pid: $pid)"
+  else
+    # Start tomcat
+    echo "Starting tomcat"
+    ulimit -n 100000
+    umask 007
+    /bin/su -p -s /bin/sh $TOMCAT_USER $TOMCAT_HOME/bin/startup.sh
+  fi
+
+
+  return 0
+}
+
+stop() {
+  pid=$(tomcat_pid)
+  if [ -n "$pid" ]
+  then
+    echo "Stoping Tomcat"
+    /bin/su -p -s /bin/sh $TOMCAT_USER $TOMCAT_HOME/bin/shutdown.sh
+
+    let kwait=$SHUTDOWN_WAIT
+    count=0;
+    until [ `ps -p $pid | grep -c $pid` = '0' ] || [ $count -gt $kwait ]
+    do
+      echo -n -e "\nwaiting for processes to exit";
+      sleep 1
+      let count=$count+1;
+    done
+
+    if [ $count -gt $kwait ]; then
+      echo -n -e "\nkilling processes which didn't stop after $SHUTDOWN_WAIT seconds"
+      kill -9 $pid
+    fi
+  else
+    echo "Tomcat is not running"
+  fi
+ 
+  return 0
+}
+
+case $1 in
+start)
+  start
+;; 
+stop)   
+  stop
+;; 
+restart)
+  stop
+  start
+;;
+status)
+  pid=$(tomcat_pid)
+  if [ -n "$pid" ]
+  then
+    echo "Tomcat is running with pid: $pid"
+  else
+    echo "Tomcat is not running"
+  fi
+;; 
+esac    
+exit 0
+
+#Now create and run java_tomcat.yml playboook.
+oyj@Workstation-oyj-X555QG ~/.ansible$vi java_tomcat.yml 
+- hosts: app
+  roles:
+    - oyj.java
+    - oyj.tomcat
+
+
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible-playbook java_tomcat.yml --limit=ct6vag -b
+
+PLAY [app] ***********************************************************************************************************************************
+
+TASK [Gathering Facts] ***********************************************************************************************************************
+ok: [ct6vag]
+
+TASK [oyj.java : Ensure wget package installed] **********************************************************************************************
+ok: [ct6vag]
+
+TASK [oyj.java : Ensure java.sh into /etc/profile.d] *****************************************************************************************
+changed: [ct6vag]
+
+TASK [oyj.java : script] *********************************************************************************************************************
+changed: [ct6vag]
+
+TASK [oyj.java : debug] **********************************************************************************************************************
+ok: [ct6vag] => {
+    "msg": "System ct6vag installed  jdk 9.0.4 in /usr/local/jdk-9.0.4"
+}
+
+TASK [oyj.tomcat : Add tomcat group] *********************************************************************************************************
+ok: [ct6vag]
+
+TASK [oyj.tomcat : Add tomcat user] **********************************************************************************************************
+ok: [ct6vag]
+
+TASK [oyj.tomcat : Download tomcat 8.5.29] ***************************************************************************************************
+changed: [ct6vag]
+
+TASK [oyj.tomcat : debug] ********************************************************************************************************************
+ok: [ct6vag] => {
+    "msg": "System ct6vag download  tomcat  8.5.29 on server"
+}
+
+TASK [oyj.tomcat : Untar apache-tomcat-8.5.29] ***********************************************************************************************
+changed: [ct6vag]
+
+TASK [oyj.tomcat : debug] ********************************************************************************************************************
+ok: [ct6vag] => {
+    "msg": "System ct6vag untar tomcat 8.5.29"
+}
+
+TASK [oyj.tomcat : shell] ********************************************************************************************************************
+ [WARNING]: Consider using the file module with group rather than running chgrp.  If you need to use command because file is insufficient you
+can add warn=False to this command task or set command_warnings=False in ansible.cfg to get rid of this message.
+
+changed: [ct6vag]
+
+TASK [oyj.tomcat : debug] ********************************************************************************************************************
+ok: [ct6vag] => {
+    "msg": "Ownership set /usr/local/apache-tomcat-8.5.29"
+}
+
+TASK [oyj.tomcat : Add JAVA_HOME TO /etc/profile.d/] *****************************************************************************************
+changed: [ct6vag]
+
+TASK [oyj.tomcat : debug] ********************************************************************************************************************
+ok: [ct6vag] => {
+    "msg": "Add java_home to /etc/profile.d"
+}
+
+TASK [oyj.tomcat : Tomcat 8.5.29 systemd add] ************************************************************************************************
+skipping: [ct6vag]
+
+TASK [oyj.tomcat : debug] ********************************************************************************************************************
+ok: [ct6vag] => {
+    "msg": "Tomcat 8.5.29 add to systemd service"
+}
+
+TASK [oyj.tomcat : shell] ********************************************************************************************************************
+skipping: [ct6vag]
+
+TASK [oyj.tomcat : debug] ********************************************************************************************************************
+ok: [ct6vag] => {
+    "msg": "Tomcat 8.5.29 add to systemd service start"
+}
+
+TASK [oyj.tomcat : Tomcat 8.5.29 service add] ************************************************************************************************
+changed: [ct6vag]
+
+TASK [oyj.tomcat : Start 8.5.29 service start] ***********************************************************************************************
+ok: [ct6vag]
+
+TASK [oyj.tomcat : Run firewalld daemon and enable when not enabled.] ************************************************************************
+skipping: [ct6vag]
+
+TASK [oyj.tomcat : shell] ********************************************************************************************************************
+skipping: [ct6vag]
+
+TASK [oyj.tomcat : debug] ********************************************************************************************************************
+ok: [ct6vag] => {
+    "msg": "For Centos7 only,Enable firewalld service and open Tomcat 8080 and 22  firewalld open"
+}
+
+PLAY RECAP ***********************************************************************************************************************************
+ct6vag                     : ok=20   changed=7    unreachable=0    failed=0   
+
+
+
+#Test
+[root@ct6vag init.d]# ps -ef | grep tomcat
+tomcat    9132     1  4 01:05 pts/0    00:00:17 /usr/local/jdk-9.0.4/bin/java -Djava.util.logging.config.file=/usr/local/apache-tomcat-8.5.29/conf/logging.properties -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager -Dfile.encoding=UTF-8 -Dnet.sf.ehcache.skipUpdateCheck=true -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:+UseParNewGC -XX:MaxPermSize=128m -Xms512m -Xmx512m -Djdk.tls.ephemeralDHKeySize=2048 -Djava.protocol.handler.pkgs=org.apache.catalina.webresources -Dignore.endorsed.dirs= -classpath /usr/local/apache-tomcat-8.5.29/bin/bootstrap.jar:/usr/local/apache-tomcat-8.5.29/bin/tomcat-juli.jar -Dcatalina.base=/usr/local/apache-tomcat-8.5.29 -Dcatalina.home=/usr/local/apache-tomcat-8.5.29 -Djava.io.tmpdir=/usr/local/apache-tomcat-8.5.29/temp org.apache.catalina.startup.Bootstrap start
+root     10283  5980  0 01:12 pts/0    00:00:00 grep tomcat
+[root@ct6vag init.d]# chkconfig --list | grep tomcat
+tomcat         	0:off	1:off	2:on	3:on	4:on	5:on	6:off
+
+
+#Well Everything is ok.
+
+
+
+####################################################################################################################################################################
+
+Goal:To run any java-baed application, we need database. So, I would like to mysql  as a database server.
+     Install roller blogger enginer based on java.
+
+
+####################################################################################################################################################################
+
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible-galaxy install geerlingguy.mysql
+- downloading role 'mysql', owned by geerlingguy
+- downloading role from https://github.com/geerlingguy/ansible-role-mysql/archive/2.8.2.tar.gz
+- extracting geerlingguy.mysql to /home/oyj/.ansible/roles/geerlingguy.mysql
+- geerlingguy.mysql (2.8.2) was installed successfully
+
+
+Enough memory on db mysql server would be better cause lack of memory could make running error.
+oyj@Workstation-oyj-X555QG ~/.ansible$vi hosts 
+
+[app]
+ct7vag
+ct6vag
+
+[db]
+u16vag
+
+[vagdev:vars]
+ansible_ssh_user=vagrant
+ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+
+oyj@Workstation-oyj-X555QG ~/.ansible$cat mysql.yml 
+- hosts: db
+  roles:
+    - geerlingguy.mysql
+
+
+oyj@Workstation-oyj-X555QG ~/.ansible$ansible-playbook mysql.yml -b
+
+PLAY [db] **************************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] **************************************************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Include OS-specific variables.] ***************************************************************************************************************************************************************
+ok: [u16vag] => (item=/home/oyj/.ansible/roles/geerlingguy.mysql/vars/Debian.yml)
+
+TASK [geerlingguy.mysql : Include OS-specific variables (RedHat).] ******************************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Define mysql_packages.] ***********************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Define mysql_daemon.] *************************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Define mysql_slow_query_log_file.] ************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Define mysql_log_error.] **********************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Define mysql_syslog_tag.] *********************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Define mysql_pid_file.] ***********************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Define mysql_config_file.] ********************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Define mysql_config_include_dir.] *************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Define mysql_socket.] *************************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Define mysql_supports_innodb_large_prefix.] ***************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : include] **************************************************************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : include] **************************************************************************************************************************************************************************************
+included: /home/oyj/.ansible/roles/geerlingguy.mysql/tasks/setup-Debian.yml for u16vag
+
+TASK [geerlingguy.mysql : Check if MySQL is already installed.] *********************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Update apt cache if MySQL is not yet installed.] **********************************************************************************************************************************************
+changed: [u16vag]
+
+TASK [geerlingguy.mysql : Ensure MySQL Python libraries are installed.] *************************************************************************************************************************************************
+changed: [u16vag]
+
+TASK [geerlingguy.mysql : Ensure MySQL packages are installed.] *********************************************************************************************************************************************************
+changed: [u16vag] => (item=[u'mysql-common', u'mysql-server'])
+
+TASK [geerlingguy.mysql : Ensure MySQL is stopped after initial install.] ***********************************************************************************************************************************************
+changed: [u16vag]
+
+TASK [geerlingguy.mysql : Delete innodb log files created by apt package after initial install.] ************************************************************************************************************************
+changed: [u16vag] => (item=ib_logfile0)
+changed: [u16vag] => (item=ib_logfile1)
+
+TASK [geerlingguy.mysql : include] **************************************************************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Check if MySQL packages were installed.] ******************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Copy my.cnf global MySQL configuration.] ******************************************************************************************************************************************************
+changed: [u16vag]
+
+TASK [geerlingguy.mysql : Verify mysql include directory exists.] *******************************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Copy my.cnf override files into include directory.] *******************************************************************************************************************************************
+
+TASK [geerlingguy.mysql : Create slow query log file (if configured).] **************************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Create datadir if it does not exist] **********************************************************************************************************************************************************
+changed: [u16vag]
+
+TASK [geerlingguy.mysql : Set ownership on slow query log file (if configured).] ****************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Create error log file (if configured).] *******************************************************************************************************************************************************
+changed: [u16vag]
+
+TASK [geerlingguy.mysql : Set ownership on error log file (if configured).] *********************************************************************************************************************************************
+changed: [u16vag]
+
+TASK [geerlingguy.mysql : Ensure MySQL is started and enabled on boot.] *************************************************************************************************************************************************
+changed: [u16vag]
+
+TASK [geerlingguy.mysql : Get MySQL version.] ***************************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Ensure default user is present.] **************************************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Copy user-my.cnf file with password credentials.] *********************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Disallow root login remotely] *****************************************************************************************************************************************************************
+ok: [u16vag] => (item=DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1'))
+
+TASK [geerlingguy.mysql : Get list of hosts for the root user.] *********************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Update MySQL root password for localhost root account (5.7.x).] *******************************************************************************************************************************
+changed: [u16vag] => (item=localhost)
+
+TASK [geerlingguy.mysql : Update MySQL root password for localhost root account (< 5.7.x).] *****************************************************************************************************************************
+skipping: [u16vag] => (item=localhost) 
+
+TASK [geerlingguy.mysql : Copy .my.cnf file with root password credentials.] ********************************************************************************************************************************************
+changed: [u16vag]
+
+TASK [geerlingguy.mysql : Get list of hosts for the anonymous user.] ****************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Remove anonymous MySQL users.] ****************************************************************************************************************************************************************
+
+TASK [geerlingguy.mysql : Remove MySQL test database.] ******************************************************************************************************************************************************************
+ok: [u16vag]
+
+TASK [geerlingguy.mysql : Ensure MySQL databases are present.] **********************************************************************************************************************************************************
+
+TASK [geerlingguy.mysql : Ensure MySQL users are present.] **************************************************************************************************************************************************************
+
+TASK [geerlingguy.mysql : Ensure replication user exists on master.] ****************************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Check slave replication status.] **************************************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Check master replication status.] *************************************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Configure replication on the slave.] **********************************************************************************************************************************************************
+skipping: [u16vag]
+
+TASK [geerlingguy.mysql : Start replication.] ***************************************************************************************************************************************************************************
+skipping: [u16vag]
+
+RUNNING HANDLER [geerlingguy.mysql : restart mysql] *********************************************************************************************************************************************************************
+ [WARNING]: Ignoring "sleep" as it is not used in "systemd"
+
+changed: [u16vag]
+
+PLAY RECAP **************************************************************************************************************************************************************************************************************
+u16vag                     : ok=33   changed=13   unreachable=0    failed=0   
+
+Now ALL READY TO INSTALL ROLLER BLOG ENGINE. 
