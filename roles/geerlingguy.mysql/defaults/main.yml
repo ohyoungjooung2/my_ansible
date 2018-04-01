@@ -105,17 +105,20 @@ mysql_config_include_files: []
 
 # Databases.
 mysql_databases: []
-#   - name: example
-#     collation: utf8_general_ci
-#     encoding: utf8
-#     replicate: 1
+name: "rollerdb"
+     #collation: utf8_general_ci
+     #encoding: utf8
+     #state: present
+     #replicate: 1
 
 # Users.
 mysql_users: []
-#   - name: example
-#     host: 127.0.0.1
-#     password: secret
-#     priv: *.*:USAGE
+name: roller
+host: 10.0.0.5
+password: '*232BEE719F1B45FF4193133EE37DDA54ED4A2F47'
+encrypted: yes
+priv: rollerdb.*:ALL,GRANT
+state: present
 
 # Replication settings (replication is only enabled if master/user have values).
 mysql_server_id: "1"
