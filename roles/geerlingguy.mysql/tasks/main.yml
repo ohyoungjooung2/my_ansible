@@ -28,7 +28,18 @@
 - include: databases.yml
 - include: users.yml
 - include: replication.yml
+
 - name : Create a roller_db database for roller blog engine
   mysql_db:
     name: rollerdb
+    state: present
+    encoding: utf8
+
+- name : Create a rollerdb' user roller for rollerdb blog engine
+  mysql_user:
+    name: "{{ roller_db_user }}"
+    password: '*232BEE719F1B45FF4193133EE37DDA54ED4A2F47'
+    encrypted: yes
+    host: "{{ roller_db_host }}"
+    priv: 'rollerdb.*:ALL,GRANT'
     state: present
