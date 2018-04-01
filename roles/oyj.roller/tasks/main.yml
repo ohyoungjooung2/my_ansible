@@ -17,13 +17,14 @@
     src: "{{ tomcat_root }}/{{ roller_version }}"
     dest: "{{ tomcat_root }}/"
     remote_src: yes
+  register: unarchive_roller
 
 - debug:
     msg: "System {{ inventory_hostname }} unarchive {{ roller_version }}"
-
+  when: unarchive_roller|changed
 
 - shell: |
-    cp "{{ tomcat_root }}/{{ roller_dep_dir }}/{{ war_name }}" "{{ tomcat_deploy_dir }}"
+    cp "{{ tomcat_root }}/{{ roller_dep_dir }}/webapp/{{ war_name }}" "{{ tomcat_deploy_dir }}"
     chown -R "{{ tomcat_user }}:{{ tomcat_group }}" "{{ tomcat_deploy_dir }}" 
   notify: restart tomcat
    
