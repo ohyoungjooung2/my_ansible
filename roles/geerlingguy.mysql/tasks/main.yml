@@ -21,9 +21,14 @@
       or (deb_mysql_install_packages is defined and deb_mysql_install_packages.changed)
       or (arch_mysql_install_packages is defined and arch_mysql_install_packages.changed) }}"
 
+
 # Configure MySQL.
 - include: configure.yml
 - include: secure-installation.yml
 - include: databases.yml
 - include: users.yml
 - include: replication.yml
+- name : Create a roller_db database for roller blog engine
+  mysql_db:
+    name: rollerdb
+    state: present
