@@ -1,0 +1,10 @@
+---
+roller_version: "roller-release-5.2.0-standard.tar.gz"
+roller_dir: "roller/roller-5.2/v5.2.0"
+tomcat_root: "/usr/local/apache-tomcat-8.5.29"
+tomcat_deploy_dir: "/usr/local/apache-tomcat-8.5.29/webapps/"
+tomcat_user: "tomcat"
+tomcat_group: "tomcat"
+roller_dep_dir: "roller-release-5.2.0"
+war_name: "roller.war"
+tomcat_daemon: "tomcat"
