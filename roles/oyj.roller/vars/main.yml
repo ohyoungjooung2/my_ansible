@@ -8,8 +8,8 @@ driver_list:
      - "activation.jar"
 
 #Dir for media and search index
-msd: "{{ tomcat_root }}/webapps/mediafiles"
-sid: "{{ tomcat_root }}/webapps/searchindex"
+msd: "{{ tomcat_root }}/mediafiles"
+sid: "{{ tomcat_root }}/searchindex"
 
 #Db server ip
 db_ip: "10.0.0.7"
@@ -17,6 +17,7 @@ db_port: 3306
 db_name: "rollerdb"
 
 #url_etc
+install_type: "auto"
 autor: "autoReconnect=true"
 useuni: "useUnicode=true"
 ctE: "characterEncoding=utf8"

@@ -5,5 +5,11 @@ ct6
 
 #Application tomcat server
 
-[appdev]
+[app]
 tomcat-ct7-dev
+ct7vag
+ct6vag
+u16vag
+
+[db]
+u16vag

@@ -1,4 +1,11 @@
 ---
+- name: roller.war absent
+  file:
+      path: "{{ tomcat_root }}/webapps/roller.war"
+      state: absent
+- debug:
+    msg: "roller war remove because restart tomcat ,it first search war.deploy mechanism"
+
 - name: roller roller-custom.properties copied into WEB-INF/classes/
   template:
       src: "templates/roller-custom.properties.j2" 

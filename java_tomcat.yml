@@ -1,4 +1,6 @@
-- hosts: app
+- hosts: ct7vag
+  remote_user: vagrant
   roles:
     - oyj.java
     - oyj.tomcat
+  sudo: yes

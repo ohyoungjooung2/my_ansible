@@ -1,3 +1,8 @@
-- hosts: Development
+---
+- hosts: ct6vag
+  remote_user: vagrant
   roles:
-    - geerlingguy.ntp
+    - { role: geerlingguy.ntp,ntp_manage_config: true, ntp_timezone: 'Asia/Seoul' }
+
+
+  sudo: yes
