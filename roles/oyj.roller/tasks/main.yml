@@ -1,0 +1,32 @@
+---
+
+- name: "Download roller {{ roller_version }}"
+  get_url:
+          url: "{{ mirror_host }}/{{ roller_dir }}/{{ roller_version }}"
+          dest: "{{ tomcat_root }}/"
+          checksum: sha1:1a22e78de383a5e441e2c8e3c78db047f9c1a622
+  register: get_roller
+
+- debug:
+    msg: "System {{ inventory_hostname }} download  {{ roller_version }} on server"
+  when: get_roller|changed
+
+
+- name: "Unarchive roller {{ roller_version }}"
+  unarchive:
+    src: "{{ tomcat_root }}/{{ roller_version }}"
+    dest: "{{ tomcat_root }}/"
+    remote_src: yes
+  register: unarchive_roller
+
+- debug:
+    msg: "System {{ inventory_hostname }} unarchive {{ roller_version }}"
+  when: unarchive_roller|changed
+
+- shell: |
+    cp "{{ tomcat_root }}/{{ roller_dep_dir }}/webapp/{{ war_name }}" "{{ tomcat_deploy_dir }}"
+    chown -R "{{ tomcat_user }}:{{ tomcat_group }}" "{{ tomcat_deploy_dir }}" 
+  notify: restart tomcat
+   
+- debug:
+    msg: "System {{ inventory_hostname }} shell chown {{ tomcat_user }} {{ tomcat_group }} {{ tomcat_deploy_dir }} and restart tomcat"

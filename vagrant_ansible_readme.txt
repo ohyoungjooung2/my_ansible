@@ -1800,6 +1800,15 @@ oyj@Workstation-oyj-X555QG ~/.ansible$cat mysql.yml
   roles:
     - geerlingguy.mysql
 
+oyj@Workstation-oyj-X555QG ~/.ansible$vi roles/geerlingguy.mysql/tasks/main.yml 
+#Other settings. Below is to create rollerdb database for roller blog engine
+#Add below part into tasks/main.yml
+- name : Create a rollerdb database for roller blog engine
+  mysql_db:
+    name: rollerdb
+    state: present
+
+
 
 oyj@Workstation-oyj-X555QG ~/.ansible$ansible-playbook mysql.yml -b
 
@@ -1960,4 +1969,88 @@ changed: [u16vag]
 PLAY RECAP **************************************************************************************************************************************************************************************************************
 u16vag                     : ok=33   changed=13   unreachable=0    failed=0   
 
-Now ALL READY TO INSTALL ROLLER BLOG ENGINE. 
+
+
+Now ALL READY TO INSTALL ROLLER BLOG ENGINE, WHICH IS TOMCAT8 SERVER WITH JAVA 9 AND NOW UBUNTU 16.04 XENIAL DATABASE MYSQL SERVER.
+
+Creating sha1 key. Apache roller currently do not provide md5 or sha1 hash key, but only gpg,pgp,pgpk method.
+So, I will verify manually with gpg and create sha1 key.
+
+oyj@Workstation-oyj-X555QG ~/.ansible/files$wget http://mirror.navercorp.com/apache/roller/roller-5.2/v5.2.0/roller-release-5.2.0-standard.tar.gz
+--2018-04-01 17:22:54--  http://mirror.navercorp.com/apache/roller/roller-5.2/v5.2.0/roller-release-5.2.0-standard.tar.gz
+Resolving mirror.navercorp.com (mirror.navercorp.com)... 125.209.216.167
+Connecting to mirror.navercorp.com (mirror.navercorp.com)|125.209.216.167|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 40862537 (39M) [application/x-gzip]
+Saving to: ‘roller-release-5.2.0-standard.tar.gz’
+
+roller-release-5.2.0-standard.tar.gz          100%[==============================================================================================>]  38.97M  6.70MB/s    in 7.7s    
+
+2018-04-01 17:23:02 (5.05 MB/s) - ‘roller-release-5.2.0-standard.tar.gz’ saved [40862537/40862537]
+
+Download KEYS.
+oyj@Workstation-oyj-X555QG ~/.ansible/files$wget http://www.apache.org/dist/roller/KEYS
+--2018-04-01 17:24:44--  http://www.apache.org/dist/roller/KEYS
+Resolving www.apache.org (www.apache.org)... 140.211.11.105
+Connecting to www.apache.org (www.apache.org)|140.211.11.105|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 6043 (5.9K)
+Saving to: ‘KEYS’
+
+KEYS                                          100%[==============================================================================================>]   5.90K  --.-KB/s    in 0s      
+
+2018-04-01 17:24:44 (338 MB/s) - ‘KEYS’ saved [6043/6043]
+
+Download asc.
+oyj@Workstation-oyj-X555QG ~/.ansible/files$wget http://www.apache.org/dist/roller/roller-5.2/v5.2.0/roller-release-5.2.0-standard.tar.gz.asc
+--2018-04-01 17:25:31--  http://www.apache.org/dist/roller/roller-5.2/v5.2.0/roller-release-5.2.0-standard.tar.gz.asc
+Resolving www.apache.org (www.apache.org)... 140.211.11.105
+Connecting to www.apache.org (www.apache.org)|140.211.11.105|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 181 [text/plain]
+Saving to: ‘roller-release-5.2.0-standard.tar.gz.asc’
+
+roller-release-5.2.0-standard.tar.gz.asc      100%[==============================================================================================>]     181  --.-KB/s    in 0s      
+
+
+
+oyj@Workstation-oyj-X555QG ~/.ansible/files$gpg --verify roller-release-5.2.0-standard.tar.gz.asc roller-release-5.2.0-standard.tar.gz
+gpg: Signature made Tue Nov  7 07:13:01 2017 KST using DSA key ID 17AA5B25
+gpg: Good signature from "David Johnson <snoopdave@apache.org>"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 0972 6369 9A89 2BBB 188E  1E39 FD9E D9F1 17AA 5B25
+
+
+#To be more certain, visit https://www.apache.org/info/verification.html and check again.
+
+oyj@Workstation-oyj-X555QG ~/.ansible/files$sha1sum roller-release-5.2.0-standard.tar.gz
+1a22e78de383a5e441e2c8e3c78db047f9c1a622  roller-release-5.2.0-standard.tar.gz
+
+
+https://checker.apache.org/sums/1a22e78de383a5e441e2c8e3c78db047f9c1a622.html
+With this sha1 checksum, we can check if it is corrupted or not.
+And sure, I am able to use this checksum on my roller.yml playbook.
+
+
+oyj@Workstation-oyj-X555QG ~/.ansible/roles$mkdir oyj.roller
+oyj@Workstation-oyj-X555QG ~/.ansible/roles$cd oyj.roller/
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/oyj.roller$mkdir tasks vars templates
+
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/oyj.roller$mkdir defaults
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/oyj.roller$vi defaults/main.yml
+---
+roller_version: "roller-release-5.2.0-standard.tar.gz"
+roller_dir: "roller/roller-5.2/v5.2.0"
+
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/oyj.roller/vars$vi main.yml
+---
+mirror_host:"http://apache.mirror.cdnetworks.com"
+                                                
+
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/oyj.roller$vi tasks/main.yml
+
+
+
+
+
