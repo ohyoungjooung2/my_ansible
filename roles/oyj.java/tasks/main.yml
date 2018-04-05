@@ -4,6 +4,13 @@
        name: wget
        state: present
 
+- include: selinux.yml
+  #Centos or Redhat '>=6' version.
+  #when: ansible_distribution == 'CentOS' and ansible_distribution_major_version >= '6'
+  when: ansible_os_family == 'RedHat' and ansible_distribution_major_version >= '6'
+
+
+
 - name: Ensure java.sh into /etc/profile.d
   template: src=templates/java.sh.j2 dest=/etc/profile.d/java.sh
           mode=0644
@@ -13,5 +20,3 @@
 
 - debug:
         msg: "System {{ inventory_hostname }} installed  jdk {{ java_version }} in {{ java_home }}"
-
-

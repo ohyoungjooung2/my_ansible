@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 - hosts: app
-=======
-- hosts: ct7vag
->>>>>>> 894b81d2a109dceab64f992d47cb78e760dffb66
   remote_user: vagrant
   roles:
     - oyj.java

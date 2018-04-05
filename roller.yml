@@ -1,5 +1,5 @@
 - hosts: app
   remote_user: vagrant
   roles:
-    - oyj.java
+    - oyj.roller
   sudo: yes

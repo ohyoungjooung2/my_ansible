@@ -1,0 +1,11 @@
+---
+#Selinux related package install
+- name: Ensure libselinux-python installed
+  yum:
+    name: libselinux-python
+    state: installed
+
+#Selinux permissive
+- selinux:
+    policy: targeted
+    state: permissive

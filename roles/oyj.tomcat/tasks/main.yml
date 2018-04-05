@@ -1,4 +1,7 @@
 ---
+- include: selinux.yml
+  #Centos or Redhat '>=6' version.
+  when: ansible_os_family == 'Redhat' and ansible_distribution_version.split('.')[0] >= '6'
 - include: useradd.yml
 - include: downuntar.yml
 - include: ownership.yml
