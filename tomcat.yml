@@ -1,6 +1,6 @@
 ---
 - name: tomcat install stable
-  hosts: app
+  hosts: vagdev
   vars:
      tomcat_version: 8.5.29
      target_dir: /usr/local
@@ -8,7 +8,7 @@
      java_home: /usr/local/jdk-9.0.4
      tomcat_home: /usr/local/apache-tomcat-8.5.29
      tomcat_http_port: 8080
-     ssh_port: 70
+     ssh_port: 22
 
   tasks:
      - name: Download tomcat tomcat_version
@@ -56,7 +56,7 @@
 
 
      - debug:
-         msg: "Add java_home to /etc/profile" 
+         msg: "Add java_home to /etc/profile.d" 
 
 
      - shell: |

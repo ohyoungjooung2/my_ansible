@@ -1,3 +1,5 @@
-- hosts: app
+- hosts: db
+  remote_user: vagrant
   roles:
     - geerlingguy.mysql
+  sudo: yes

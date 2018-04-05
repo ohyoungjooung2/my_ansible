@@ -11,14 +11,13 @@
     msg: "Add java_home to /etc/profile.d" 
 
 
-- name: "Tomcat {{ tomcat_version }} systemd service add"
+- name: "Tomcat {{ tomcat_version }} systemd add"
   template: src=templates/tomcat_service.j2 dest=/etc/systemd/system/tomcat.service
      mode=0755
   when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
   
 - debug:
     msg: "Tomcat {{ tomcat_version }} add to systemd service" 
-
 
 - shell: |
     systemctl daemon-reload
@@ -28,6 +27,21 @@
 
 - debug:
     msg: "Tomcat {{ tomcat_version }} add to systemd service start" 
+
+
+- name: "Tomcat {{ tomcat_version }} service add"
+  template: src=templates/centos6_tomcat_service.j2 dest=/etc/init.d/tomcat
+     mode=0755
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '6'
+
+- name: "Start {{ tomcat_version }} service start"
+  service:
+     name: tomcat
+     state: started
+     enabled: yes
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '6'
+
+
 
 - include: firewalled_tomcat.yml
   when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'

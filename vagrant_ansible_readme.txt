@@ -1800,176 +1800,123 @@ oyj@Workstation-oyj-X555QG ~/.ansible$cat mysql.yml
   roles:
     - geerlingguy.mysql
 
-oyj@Workstation-oyj-X555QG ~/.ansible$vi roles/geerlingguy.mysql/tasks/main.yml 
-#Other settings. Below is to create rollerdb database for roller blog engine
-#Add below part into tasks/main.yml
-- name : Create a rollerdb database for roller blog engine
+I need some hack to set character set and roller database creation.
+1)Character set
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/geerlingguy.mysql/templates$pwd
+/home/oyj/.ansible/roles/geerlingguy.mysql/templates
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/geerlingguy.mysql/templates$vi my.cnf.j2 
+[mysqld]
+port = {{ mysql_port }}
+bind-address = {{ mysql_bind_address }}
+datadir = {{ mysql_datadir }}
+socket = {{ mysql_socket }}
+pid-file = {{ mysql_pid_file }}
+#Below three lines are added.
+collation-server = utf8_unicode_ci
+character-set-server = utf8
+skip-character-set-client-handshake
+
+
+#character_set: "utf8"
+#collation_server: "utf8_general_ci"
+
+
+
+2) Roller database creation and roller user.
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/geerlingguy.mysql/defaults$vi main.yml 
+
+#Added parts into 
+# Databases.
+mysql_databases: 
+  - { name: rollerdb,
+   collation: utf8_general_ci,
+   encoding: utf8,
+   state: present,
+   replicate: 0,
+  }
+
+  - { name: rollerdb2,
+   collation: utf8_general_ci,
+   encoding: utf8,
+   state: present,
+   replicate: 0,
+  }
+
+
+# Users.
+mysql_users: 
+  - { name: roller,
+      host: 10.0.0.5,
+      password: '*232BEE719F1B45FF4193133EE37DDA54ED4A2F47',
+      encrypted: yes,
+      priv: 'rollerdb.*:ALL,GRANT',
+      state: present,
+  }
+
+  - { name: roller2,
+      host: 10.0.0.5,
+      password: '*232BEE719F1B45FF4193133EE37DDA54ED4A2F47',
+      encrypted: yes,
+      priv: 'rollerdb.*:ALL,GRANT',
+      state: present,
+  }
+
+
+
+ oyj@Workstation-oyj-X555QG ~/.ansible/roles/geerlingguy.mysql$cat tasks/databases.yml 
+---
+- name: Ensure MySQL databases are present.
   mysql_db:
-    name: rollerdb
-    state: present
+    name: "{{ item.name }}"
+    collation: "{{ item.collation | default('utf8_general_ci') }}"
+    encoding: "{{ item.encoding | default('utf8') }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ mysql_databases }}"
+oyj@Workstation-oyj-X555QG ~/.ansible/roles/geerlingguy.mysql$cat tasks/users.yml 
+---
+- name: Ensure MySQL users are present.
+  mysql_user:
+    name: "{{ item.name }}"
+    host: "{{ item.host | default('localhost') }}"
+    password: "{{ item.password }}"
+    priv: "{{ item.priv | default('*.*:USAGE') }}"
+    state: "{{ item.state | default('present') }}"
+    append_privs: "{{ item.append_privs | default('no') }}"
+    encrypted: "{{ item.encrypted | default('no') }}"
+  with_items: "{{ mysql_users }}"
+  no_log: true
+                                        
+
+          
+
+After executing mysql.yml playbook.
+
+[root@ct7vag ~]# ifconfig | grep 10.0.0.5
+        inet 10.0.0.5  netmask 255.255.255.0  broadcast 10.0.0.255
+[root@ct7vag ~]# 
+[root@ct7vag ~]# mysql -u roller -h 10.0.0.7 -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MySQL connection id is 23
+Server version: 5.7.21-0ubuntu0.16.04.1 (Ubuntu)
+
+Copyright (c) 2000, 2017, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+Database changed
+MySQL [rollerdb]> show tables;
+Empty set (0.00 sec)
+
+MySQL [rollerdb]> exit
 
 
 
-oyj@Workstation-oyj-X555QG ~/.ansible$ansible-playbook mysql.yml -b
-
-PLAY [db] **************************************************************************************************************************************************************************************************************
-
-TASK [Gathering Facts] **************************************************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Include OS-specific variables.] ***************************************************************************************************************************************************************
-ok: [u16vag] => (item=/home/oyj/.ansible/roles/geerlingguy.mysql/vars/Debian.yml)
-
-TASK [geerlingguy.mysql : Include OS-specific variables (RedHat).] ******************************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Define mysql_packages.] ***********************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Define mysql_daemon.] *************************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Define mysql_slow_query_log_file.] ************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Define mysql_log_error.] **********************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Define mysql_syslog_tag.] *********************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Define mysql_pid_file.] ***********************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Define mysql_config_file.] ********************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Define mysql_config_include_dir.] *************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Define mysql_socket.] *************************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Define mysql_supports_innodb_large_prefix.] ***************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : include] **************************************************************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : include] **************************************************************************************************************************************************************************************
-included: /home/oyj/.ansible/roles/geerlingguy.mysql/tasks/setup-Debian.yml for u16vag
-
-TASK [geerlingguy.mysql : Check if MySQL is already installed.] *********************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Update apt cache if MySQL is not yet installed.] **********************************************************************************************************************************************
-changed: [u16vag]
-
-TASK [geerlingguy.mysql : Ensure MySQL Python libraries are installed.] *************************************************************************************************************************************************
-changed: [u16vag]
-
-TASK [geerlingguy.mysql : Ensure MySQL packages are installed.] *********************************************************************************************************************************************************
-changed: [u16vag] => (item=[u'mysql-common', u'mysql-server'])
-
-TASK [geerlingguy.mysql : Ensure MySQL is stopped after initial install.] ***********************************************************************************************************************************************
-changed: [u16vag]
-
-TASK [geerlingguy.mysql : Delete innodb log files created by apt package after initial install.] ************************************************************************************************************************
-changed: [u16vag] => (item=ib_logfile0)
-changed: [u16vag] => (item=ib_logfile1)
-
-TASK [geerlingguy.mysql : include] **************************************************************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Check if MySQL packages were installed.] ******************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Copy my.cnf global MySQL configuration.] ******************************************************************************************************************************************************
-changed: [u16vag]
-
-TASK [geerlingguy.mysql : Verify mysql include directory exists.] *******************************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Copy my.cnf override files into include directory.] *******************************************************************************************************************************************
-
-TASK [geerlingguy.mysql : Create slow query log file (if configured).] **************************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Create datadir if it does not exist] **********************************************************************************************************************************************************
-changed: [u16vag]
-
-TASK [geerlingguy.mysql : Set ownership on slow query log file (if configured).] ****************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Create error log file (if configured).] *******************************************************************************************************************************************************
-changed: [u16vag]
-
-TASK [geerlingguy.mysql : Set ownership on error log file (if configured).] *********************************************************************************************************************************************
-changed: [u16vag]
-
-TASK [geerlingguy.mysql : Ensure MySQL is started and enabled on boot.] *************************************************************************************************************************************************
-changed: [u16vag]
-
-TASK [geerlingguy.mysql : Get MySQL version.] ***************************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Ensure default user is present.] **************************************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Copy user-my.cnf file with password credentials.] *********************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Disallow root login remotely] *****************************************************************************************************************************************************************
-ok: [u16vag] => (item=DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1'))
-
-TASK [geerlingguy.mysql : Get list of hosts for the root user.] *********************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Update MySQL root password for localhost root account (5.7.x).] *******************************************************************************************************************************
-changed: [u16vag] => (item=localhost)
-
-TASK [geerlingguy.mysql : Update MySQL root password for localhost root account (< 5.7.x).] *****************************************************************************************************************************
-skipping: [u16vag] => (item=localhost) 
-
-TASK [geerlingguy.mysql : Copy .my.cnf file with root password credentials.] ********************************************************************************************************************************************
-changed: [u16vag]
-
-TASK [geerlingguy.mysql : Get list of hosts for the anonymous user.] ****************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Remove anonymous MySQL users.] ****************************************************************************************************************************************************************
-
-TASK [geerlingguy.mysql : Remove MySQL test database.] ******************************************************************************************************************************************************************
-ok: [u16vag]
-
-TASK [geerlingguy.mysql : Ensure MySQL databases are present.] **********************************************************************************************************************************************************
-
-TASK [geerlingguy.mysql : Ensure MySQL users are present.] **************************************************************************************************************************************************************
-
-TASK [geerlingguy.mysql : Ensure replication user exists on master.] ****************************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Check slave replication status.] **************************************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Check master replication status.] *************************************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Configure replication on the slave.] **********************************************************************************************************************************************************
-skipping: [u16vag]
-
-TASK [geerlingguy.mysql : Start replication.] ***************************************************************************************************************************************************************************
-skipping: [u16vag]
-
-RUNNING HANDLER [geerlingguy.mysql : restart mysql] *********************************************************************************************************************************************************************
- [WARNING]: Ignoring "sleep" as it is not used in "systemd"
-
-changed: [u16vag]
-
-PLAY RECAP **************************************************************************************************************************************************************************************************************
-u16vag                     : ok=33   changed=13   unreachable=0    failed=0   
+###############################################################################################################################################################################
 
 
+###############################################################################################################################################################################
+******************************************************************************************************************
 
 Now ALL READY TO INSTALL ROLLER BLOG ENGINE, WHICH IS TOMCAT8 SERVER WITH JAVA 9 AND NOW UBUNTU 16.04 XENIAL DATABASE MYSQL SERVER.
 

@@ -1,3 +1,2 @@
 ---
-character_set: "utf8"
-collation_server: "utf8_general_ci"
+mysql_root_password: "root"

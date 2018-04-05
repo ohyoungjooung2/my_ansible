@@ -2,3 +2,4 @@ key_file: /etc/nginx/ssl/nginx.key
 cert_file: /etc/nginx/ssl/nginx.crt
 conf_file: /etc/nginx/sites-available/default
 server_name: 192.168.56.102
+node_apps_location: /usr/local/opt/node
