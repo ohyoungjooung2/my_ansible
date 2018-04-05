@@ -1,3 +1,12 @@
+<<<<<<< HEAD
 - hosts: vagdev
+=======
+---
+- hosts: ct6vag
+  remote_user: vagrant
+>>>>>>> 894b81d2a109dceab64f992d47cb78e760dffb66
   roles:
-    - geerlingguy.ntp
+    - { role: geerlingguy.ntp,ntp_manage_config: true, ntp_timezone: 'Asia/Seoul' }
+
+
+  sudo: yes

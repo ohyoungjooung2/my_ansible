@@ -1,4 +1,4 @@
-- hosts: app
+- hosts: ct7vag
   remote_user: vagrant
   roles:
     - oyj.roller

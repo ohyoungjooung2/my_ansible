@@ -33,10 +33,6 @@
   notify: restart tomcat
  #Until deploy completed? 
 
-#- pause:
-#    prompt: "Until deploy completed"
-#    minutes: 10
-
 #Tomcat server config for roller blog java engine
 - include: tomcat_server_config.yml
 

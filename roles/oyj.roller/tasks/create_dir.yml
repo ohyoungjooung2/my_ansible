@@ -1,4 +1,11 @@
 ---
+ - name: Create Catalina directory
+   file:
+     path: "{{ tomcat_root }}/conf/Catalina"
+     owner: "root"
+     group: "{{ tomcat_group }}"
+     state: directory
+     mode: 0775
  
  - name: Create media file directory
    file:
