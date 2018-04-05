@@ -1,0 +1,7 @@
+---
+- name: roller roller-custom.properties copied into WEB-INF/classes/
+  template:
+      src: "templates/roller-custom.properties.j2" 
+      dest: "{{ roller_root }}/WEB-INF/classes/{{ roller_property }}"
+
+  notify: restart tomcat

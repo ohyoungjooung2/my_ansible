@@ -1,0 +1,12 @@
+---
+ 
+ - name: Copy jar driver file to {{ tomcat_root }}/lib
+   copy:
+        src: "files/{{ item }}"
+        dest: "{{ tomcat_root }}/lib/{{ item }}"
+        owner: root 
+        group: tomcat 
+        mode: 0640
+   with_items: "{{ driver_list }}"
+ - debug:
+    msg: "System {{ inventory_hostname }} copy dirvers for roller copied to tomcat lib directory"

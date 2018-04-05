@@ -1,0 +1,5 @@
+- hosts: app
+  remote_user: vagrant
+  roles:
+    - oyj.roller
+  sudo: yes

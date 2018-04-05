@@ -26,7 +26,26 @@
 - shell: |
     cp "{{ tomcat_root }}/{{ roller_dep_dir }}/webapp/{{ war_name }}" "{{ tomcat_deploy_dir }}"
     chown -R "{{ tomcat_user }}:{{ tomcat_group }}" "{{ tomcat_deploy_dir }}" 
-  notify: restart tomcat
-   
+
 - debug:
-    msg: "System {{ inventory_hostname }} shell chown {{ tomcat_user }} {{ tomcat_group }} {{ tomcat_deploy_dir }} and restart tomcat"
+    msg: "System {{ inventory_hostname }} shell chown {{ tomcat_user }} {{ tomcat_group }} {{ tomcat_deploy_dir }}."
+
+  notify: restart tomcat
+ #Until deploy completed? 
+
+#- pause:
+#    prompt: "Until deploy completed"
+#    minutes: 10
+
+#Tomcat server config for roller blog java engine
+- include: tomcat_server_config.yml
+
+#Drivers copied tomcat lib directory
+- include: driver_copy.yml
+
+# Roller search index and media file directory
+- include: create_dir.yml
+
+
+#Properties copied to WEB-INF/classes and restart tomcat once again
+- include: roller_property.yml

@@ -1,0 +1,23 @@
+---
+ 
+ - name: Create media file directory
+   file:
+     path: "{{ msd }}"
+     owner: "{{ tomcat_user }}"
+     group: "{{ tomcat_group }}"
+     state: directory
+     mode: 0660
+
+ - debug:
+    msg: "System {{ inventory_hostname }} create media file directory"
+
+ - name: Create search index directory
+   file:
+     path: "{{ sid }}"
+     owner: "{{ tomcat_user }}"
+     group: "{{ tomcat_group }}"
+     state: directory
+     mode: 0660
+
+ - debug:
+    msg: "System {{ inventory_hostname }} search index directory"

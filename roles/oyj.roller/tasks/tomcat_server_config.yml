@@ -1,0 +1,5 @@
+---
+- name: Tomcat server.xml for roller copied into $CATALINA_HOME/conf
+  template:
+      src: templates/server.xml.j2 
+      dest: "{{ tomcat_root }}/conf/server.xml"

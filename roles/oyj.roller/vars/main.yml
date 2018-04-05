@@ -1,2 +1,39 @@
 ---
 mirror_host: "http://apache.mirror.cdnetworks.com"
+
+#Driver list
+driver_list:
+     - "mysql-connector-java-5.1.46-bin.jar"
+     - "javax.mail.jar"
+     - "activation.jar"
+
+#Dir for media and search index
+msd: "{{ tomcat_root }}/webapps/mediafiles"
+sid: "{{ tomcat_root }}/webapps/searchindex"
+
+#Db server ip
+db_ip: "10.0.0.7"
+db_port: 3306
+db_name: "rollerdb"
+
+#url_etc
+autor: "autoReconnect=true"
+useuni: "useUnicode=true"
+ctE: "characterEncoding=utf8"
+mysE: "mysqlEncoding=utf8"
+
+#log4j file
+log4: "{{ tomcat_root }}/logs/roller.log "
+#dbconfig type
+db_type: "jdbc"
+db_daemon: "mysql"
+#db driver class name
+db_driver_class: "com.mysql.jdbc.Driver"
+#db url
+db_url: "{{ db_type }}:{{db_daemon}}://{{ db_ip }}:{{ db_port }}/{{ db_name }}?{{ autor }}&{{ useuni }}&{{ ctE }}&{{ mysE }}"
+db_user_name: "roller"
+db_password: "dnflskfk"
+smtp: "smtp.gmail.com"
+mail_addr: "wnapdlf05@gmail.com"
+mail_config_type: "properties"
+mail_password: "yourpass"
