@@ -1,0 +1,4 @@
+- hosts: c6
+  roles:
+    - oyj.nginx_centos6
+  sudo: yes

@@ -1,0 +1,30 @@
+---
+
+- name: Install iptables package
+  yum:
+    name: iptables
+    state: installed
+
+- name: Copy firewall script into /etc/firewall
+  template:
+     src: templates/firewall.sh.j2
+     dest: /etc/firewall.sh
+     owner: root
+     group: root
+     mode: 0744
+  notify: restart firewall
+
+- name: Copy firewall init script into /etc/init.d/firewall when not in systemd service manager
+  template:
+     src: templates/firewall.init.j2     
+     dest: /etc/init.d/firewall
+     owner: root
+     group: root
+     mode: 0755
+  when: "ansible_service_mgr != 'systemd'"
+
+- name: When boot enable
+  service:
+    name: firewall
+    state: started
+    enabled: yes

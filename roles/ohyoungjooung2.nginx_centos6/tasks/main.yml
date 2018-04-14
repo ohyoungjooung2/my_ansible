@@ -1,0 +1,64 @@
+---
+# tasks file for ohyoungjooung2.nginx_centos6
+# I could find with "ansible all -m setup -a "filter=ansible_distribution*"
+- name: No centos 6? refuse
+  fail: msg="Only CentOS {{ centos_version }} supported"
+  when: ansible_distribution != 'CentOS' or ansible_distribution_major_version != '6'
+
+# selinux vagrant image is default is Enforcing and libselinux-python is necessary.
+- include: selinux.yml
+
+- name: Ensure nginx repo copied /etc/yum.repos.d directory
+  template:
+    src: templates/nginx.repo.j2
+    dest: /etc/yum.repos.d/nginx.repo
+
+# Repo update. Default is false.
+- name: yum update latest?
+  yum:
+    name: '*'
+    state: latest
+  when: os_update 
+
+#Yum install nginx
+- name: Ensure nginx install
+  yum:
+    name: nginx
+    #state: installed
+    state: present
+  tags:
+    - nginx_installed
+
+#Root /etc/nginx/nginx.conf
+- name: Copy root_nginx.conf.j2 to {{ root_config_file }}
+  template:
+     src=templates/root_nginx.conf.j2
+     dest={{ root_config_file }}
+  notify: restart nginx
+
+
+#Nginx default config file copy
+- name: Copy default_nginx.conf.j2 to {{ config_file }}
+  template: 
+     src=templates/default_nginx.conf.j2
+     dest={{ config_file }}
+  notify: restart nginx
+
+# When nginx_cert_config is true
+- include: nginx_ssl.yml
+  when: nginx_cert_config  or proxy_balancer_enable
+  tags:
+    - tlsadd
+
+# When vhost_enabled is true
+- include: nvhost.yml
+  when: name_vhost_enable
+
+- name: Ensure running of nginx
+  service:
+   name: nginx
+   state: started
+   enabled: yes
+
+- include: firewall.yml
+  when: production_on

@@ -1,0 +1,16 @@
+server {
+       listen {{ item.listen }};
+
+       server_name {{ item.name }} ;
+ 
+ 
+
+       location / {
+              root {{ item.root }};
+              index {{ item.index }};
+              access_log {{ item.access_log_dir }}/{{ item.name }}_access_log main;
+              error_log {{ item.error_log_dir }}/{{ item.name }}-error_log;
+
+                try_files $uri $uri/ =404;
+       }
+}

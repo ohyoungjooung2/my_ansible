@@ -1,0 +1,17 @@
+server {
+       listen 80 default_server;
+       listen [::]:80 default_server ipv6only=on;
+
+ 
+       root /usr/share/nginx/html;
+       index index.html index.htm;
+
+       server_name {{ server_name }} ;
+       access_log: /var/log/nginx/{{ server_name }}-access_log
+ 
+
+       location / {
+
+                try_files $uri $uri/ =404;
+       }
+}

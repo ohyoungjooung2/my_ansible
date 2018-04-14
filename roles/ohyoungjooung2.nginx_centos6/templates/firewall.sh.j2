@@ -1,0 +1,93 @@
+#!/bin/bash
+
+IPTABLE="/sbin/iptables"
+
+#First all clear
+clear_firewall(){
+  $IPTABLE -F
+  $IPTABLE -X
+}
+
+#No spoofing
+no_spoop_no_tcp_flag(){
+ if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]
+ then
+   for filter in /proc/sys/net/ipv4/conf/*/rp_filter
+ do
+   echo 1 > $filter
+ done
+ $IPTABLE -A INPUT -p tcp --tcp-flags ALL NONE -j DROP
+ $IPTABLE -A INPUT -p tcp ! --syn -m state --state NEW -j DROP
+fi
+}
+
+lo_interface(){
+ $IPTABLE -A INPUT -i lo -j ACCEPT
+}
+
+open_tcp_port(){
+  {% for port in allowed_tcp_ports %}
+    $IPTABLE -A INPUT -p tcp -m tcp --dport {{ port }} -j ACCEPT
+  {% endfor %}
+}
+
+{% if allowed_udp_ports %}
+open_udp_port(){
+  {% for port in allowed_udp_ports %}
+    $IPTABLE -A INPUT -p udp -m udp --dport {{ port }} -j ACCEPT
+  {% endfor %}
+}
+{% endif %}
+
+
+allow_icmp(){
+  $IPTABLE -A INPUT -p icmp -j ACCEPT
+}
+
+
+allow_ntp(){
+  $IPTABLE -A OUTPUT -p udp --dport 123 -j ACCEPT
+  $IPTABLE -A INPUT -p udp --sport 123 -j ACCEPT
+}
+
+allow_est_con(){
+  $IPTABLE -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+}
+
+log_dropped_packets(){
+  {% if log_dropped_packets %}
+    # Log other incoming requests (all of which are dropped) at 15/minute max.
+    $IPTABLE -A INPUT -m limit --limit 15/minute -j LOG --log-level 7 --log-prefix "Dropped by firewall: "
+  {% endif %}
+}
+
+
+drop_every(){
+  $IPTABLE -A INPUT -j DROP
+  $IPTABLE -A FORWARD -j DROP
+}
+
+ip6_all_drop(){
+  if [[ -x /sbin/ip6tables ]]
+  then
+   /sbin/ip6tables -A INPUT -p tcp -j DROP
+   /sbin/ip6tables -A FORWARD -p tcp -j DROP
+   /sbin/ip6tables -A OUTPUT -p tcp -j DROP
+  else
+   echo "no ip6tables"
+  fi
+}
+
+clear_firewall
+no_spoop_no_tcp_flag
+lo_interface
+open_tcp_port
+ {% if allowed_udp_ports %} 
+open_udp_port
+ {% endif %}
+allow_icmp
+allow_ntp
+allow_est_con
+log_dropped_packets
+drop_every
+ip6_all_drop

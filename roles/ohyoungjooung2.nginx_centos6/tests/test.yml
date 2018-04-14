@@ -1,0 +1,13 @@
+---
+- hosts: ct6test
+  remote_user: vagrant
+  roles:
+    #- { role: ohyoungjooung2.nginx_centos6 } #Basic nginx 80 port
+    #- { role: nginx_centos6, nginx_cert_config: true, name_vhost_enable: true } #Include TLS and vhost enable test
+    - { role: nginx_centos6, nginx_cert_config: true, name_vhost_enable: true, production_on: true } #production_on firewall enabled
+    #- { role:  nginx_centos6,  proxy_balancer_enable: true } #Load balancer
+    #- { role:  nginx_centos6,  proxy_balancer_enable: true, redirect_ssl: true } #Load balancer,redirect all to ssl
+    #- { role:  nginx_centos6,  proxy_balancer_enable: true, redirect_ssl: true, production_on: true } #when production firewalld on
+    #- { role: ohyoungjooung2.nginx_centos6,os_update: true } #Include os update
+
+  sudo: yes

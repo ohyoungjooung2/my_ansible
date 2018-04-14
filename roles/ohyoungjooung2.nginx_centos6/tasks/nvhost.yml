@@ -1,0 +1,42 @@
+---
+
+#vhost related
+- name: Create directory for vhosting link 
+  file: path={{ vhost_src_dir }} state=directory
+
+- name: Create directory for sites-enabled
+  file: path={{ vhost_link_dir }} state=directory
+  tags:
+    - vhost_dir_make
+
+- name: Create directory for vhosts
+  file: path={{ item.root }} state=directory
+  with_items: "{{ vhosts }}"
+
+- name: Create access log directory for vhost1
+  file: path={{ item.access_log_dir }} state=directory
+  with_items: "{{ vhosts }}"
+
+- name: Template vhost directory copy to /etc/nginx/sites-available/
+  template: 
+    src=templates/vhost_template.j2 
+    dest={{ vhost_src_dir}}/{{ item.filename}}
+  with_items: "{{ vhosts }}" 
+
+- name: Copy index.html.j2 to {{ item.root }}
+  template:
+    src=templates/index.html.j2
+    dest={{ item.root }}/index.html
+  with_items: "{{ vhosts }}"
+
+- name: Link /etc/nginx/sites-available/ to /etc/nginx/sites-enabled
+  file: > 
+    dest={{ vhost_link_dir}}/{{ item.filename }}
+    src={{ vhost_src_dir}}/{{ item.filename }}
+    state=link
+  with_items: "{{ vhosts }}"
+  tags:
+     link_complete
+  
+
+  notify: restart nginx

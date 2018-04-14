@@ -1,0 +1,11 @@
+---
+# handlers file for ohyoungjooung2.nginx_centos6. restart nginx
+ - name: restart nginx
+   service:
+      name: nginx
+      state: restarted
+ 
+ - name: restart firewall
+   service: 
+      name: firewall
+      state: restarted

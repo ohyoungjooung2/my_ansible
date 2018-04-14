@@ -1,0 +1,19 @@
+---
+#SSL directory creation
+- name: Create directory for TLS certification
+  file: path=/etc/nginx/ssl state=directory
+
+- name: Copy nginx.conf ssl included to {{ config_file }}
+  template:
+     src=templates/default_nginx.conf.ssl.j2
+     dest={{ config_file }}
+  notify: restart nginx
+
+- name: Copy nginx.crt to {{ cert_file }}
+  copy: src=files/nginx.crt dest={{ cert_file }} owner=root mode=0600
+  notify: restart nginx
+
+
+- name: Copy TLS certificate
+  copy: src=files/nginx.key dest={{ key_file }} owner=root mode=0600
+  notify: restart nginx
