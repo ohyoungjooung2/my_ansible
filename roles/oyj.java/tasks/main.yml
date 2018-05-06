@@ -16,7 +16,11 @@
           mode=0644
          
 #- name: Download java
-- script: ./download_java.sh
+- script: ./download_java10.sh
+  when: java_version == "10.0.1"
+
+- script: ./download_java8.sh
+  when: java_version == "1.8.0_171"
 
 - debug:
         msg: "System {{ inventory_hostname }} installed  jdk {{ java_version }} in {{ java_home }}"

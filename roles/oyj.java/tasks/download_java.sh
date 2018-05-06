@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-JAVA_VERSION="9.0.4"
+JAVA_VERSION="10.0.1"
 TARGET_DIR="/usr/local"
-
+DOWN_URL="http://download.oracle.com/otn-pub/java/jdk/10.0.1+10/fb4372174a714e6b8c52526dc134031e/jdk-10.0.1_linux-x64_bin.tar.gz"
 download_oracle_java(){
- wget --no-cookies --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/9.0.4+11/c2514751926b4512b076cc82f959763f/jdk-9.0.4_linux-x64_bin.tar.gz -O $TARGET_DIR/java-9.tar.gz
+ wget --no-cookies --no-check-certificate --header "Cookie: oraclelicense=accept-securebackup-cookie" $DOWN_URL -O $TARGET_DIR/java-$JAVA_VERSION.tar.gz
  cd $TARGET_DIR;
- tar xzf java-9.tar.gz
+ tar xzf java-$JAVA_VERSION.tar.gz
 } 
 
 

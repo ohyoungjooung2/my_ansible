@@ -1,4 +1,3 @@
 ---
-java_version: 9.0.4
-java_home: /usr/local/jdk-9.0.4
-
+#java_version: 10.0.1
+java_home: "/usr/local/jdk-{{ java_version }}"

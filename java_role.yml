@@ -1,5 +1,6 @@
-- hosts: app
+- hosts: c7
   remote_user: vagrant
   roles:
-    - oyj.java
+      #- { role: oyj.java, java_version: "10.0.1" } #java 10 version
+      - { role: oyj.java, java_version: "1.8.0_171" } #java 10 version
   sudo: yes

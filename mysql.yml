@@ -1,5 +1,5 @@
-- hosts: db
-  remote_user: vagrant
+- hosts: aws
+  remote_user: centos
   roles:
     - geerlingguy.mysql
   sudo: yes
