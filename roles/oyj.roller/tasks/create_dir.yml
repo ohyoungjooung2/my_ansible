@@ -25,7 +25,6 @@
      group: "{{ tomcat_group }}"
      state: directory
      mode: 0660
-   notify: restart tomcat
 
  - debug:
     msg: "System {{ inventory_hostname }} search index directory and notify restart tomcat"

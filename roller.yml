@@ -1,8 +1,8 @@
-- hosts: c6
+- hosts: c7
   remote_user: vagrant
   roles:
-    - { role: geerlingguy.mysql }
     - { role: oyj.java, java_version: "1.8.0_171" } #java 10 version
     - { role: oyj.tomcat, java_home: "/usr/local/jdk-1.8.0_171", tomcat_version: "8.5.31" }
-    - { role: oyj.roller,db_ip: "10.0.0.6", tomcat_root: "/usr/local/apache-tomcat-8.5.31", tomcat_deploy_dir: "/usr/local/apache-tomcat-8.5.31/webapps/" }
+    - { role: geerlingguy.mysql }
+    - { role: oyj.roller,db_ip: "10.0.0.5", tomcat_root: "/usr/local/apache-tomcat-8.5.31", tomcat_deploy_dir: "/usr/local/apache-tomcat-8.5.31/webapps/", tomcat_version: "8.5.31" }
   sudo: yes

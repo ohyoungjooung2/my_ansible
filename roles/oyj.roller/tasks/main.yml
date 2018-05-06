@@ -1,5 +1,21 @@
 ---
 
+- name: Ensure unzip package installed
+  package:
+       name: unzip
+       state: present
+- debug:
+    msg: "System {{ inventory_hostname }} download  unzip to unar war file on server"
+
+- name: Create roller directory under deploy  directory
+  file:
+     path: "{{ tomcat_deploy_dir }}/roller"
+     owner: "{{ tomcat_user }}"
+     group: "{{ tomcat_group }}"
+     state: directory
+     mode: 0750
+
+
 - name: "Download roller {{ roller_version }}"
   get_url:
           url: "{{ mirror_host }}/{{ roller_dir }}/{{ roller_version }}"
@@ -23,14 +39,35 @@
     msg: "System {{ inventory_hostname }} unarchive {{ roller_version }}"
   when: unarchive_roller|changed
 
+- name: "Stop {{ tomcat_version }} service start to deploy"
+  service:
+     name: tomcat
+     state: stopped
+     enabled: yes
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '6'
+
+
 - shell: |
-    cp "{{ tomcat_root }}/{{ roller_dep_dir }}/webapp/{{ war_name }}" "{{ tomcat_deploy_dir }}"
+    systemctl stop tomcat
+  when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '7'
+
+- shell: |
+    cp "{{ tomcat_root }}/{{ roller_dep_dir }}/webapp/{{ war_name }}" "{{ tomcat_deploy_dir }}/roller"
+    cd "{{ tomcat_deploy_dir }}/roller"
+    unzip "{{ war_name }}"
     chown -R "{{ tomcat_user }}:{{ tomcat_group }}" "{{ tomcat_deploy_dir }}" 
 
 - debug:
-    msg: "System {{ inventory_hostname }} shell chown {{ tomcat_user }} {{ tomcat_group }} {{ tomcat_deploy_dir }}."
+    msg: "System {{ inventory_hostname }} unzip {{ war_name }} and  shell chown {{ tomcat_user }} {{ tomcat_group }} {{ tomcat_deploy_dir }}."
 
- #Until deploy completed? 
+- name: roller.war absent
+  file:
+      path: "{{ tomcat_root }}/webapps/roller/roller.war"
+      state: absent
+- debug:
+    msg: "roller war remove because restart tomcat ,it first search war.deploy mechanism"
+
+
 
 #Tomcat server config for roller blog java engine
 - include: tomcat_server_config.yml
@@ -42,5 +79,10 @@
 - include: create_dir.yml
 
 
-#Properties copied to WEB-INF/classes and restart tomcat once again
+#Properties copied to WEB-INF/classes and restart tomcat finally
 - include: roller_property.yml
+
+
+#tomcat {{ tomcat_version }} start
+ - include: tomcat_start.yml
+
