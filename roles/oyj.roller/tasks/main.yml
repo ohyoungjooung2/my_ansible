@@ -30,7 +30,6 @@
 - debug:
     msg: "System {{ inventory_hostname }} shell chown {{ tomcat_user }} {{ tomcat_group }} {{ tomcat_deploy_dir }}."
 
-  notify: restart tomcat
  #Until deploy completed? 
 
 #Tomcat server config for roller blog java engine
