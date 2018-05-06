@@ -1,3 +1,5 @@
-- hosts: app
+- hosts: c7
+  remote_user: vagrant
   roles:
-    - oyj.tomcat
+    - { role: oyj.tomcat, java_home: "/usr/local/jdk-1.8.0_171", tomcat_version: "8.5.31" }
+  sudo: yes 

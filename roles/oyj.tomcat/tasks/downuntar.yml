@@ -1,9 +1,9 @@
 ---
 - name: "Download tomcat {{ tomcat_version }}"
   get_url:
-     url: "http://{{ mirror_host }}/apache/tomcat/tomcat-8/v8.5.29/bin/apache-tomcat-8.5.29.tar.gz"
+     url: "http://{{ mirror_host }}/apache/tomcat/tomcat-8/v{{ tomcat_version }}/bin/apache-tomcat-{{ tomcat_version }}.tar.gz"
      dest: "{{ target_dir }}"
-     checksum: sha1:fdc2ac85282af82a494e352c35e33dcfe1dbab6b
+     checksum: sha1:eaf69c8c8802e574447baa2d38472e80e5f81d78
   register: get_tomcat
      
 
