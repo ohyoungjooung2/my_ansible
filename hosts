@@ -26,6 +26,8 @@ ct7vag
 
 [aws]
 52.78.243.51
+[u14]
+u14vag
 
 [aws:vars]
 ansible_ssh_user=centos
@@ -41,4 +43,8 @@ ansible_ssh_private_key_file=~/.ssh/id_rsa
 
 [c7:vars]
 ansible_ssh_user=oyj
+ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[u14:vars]
+ansible_ssh_user=vagrant
 ansible_ssh_private_key_file=~/.ssh/id_rsa

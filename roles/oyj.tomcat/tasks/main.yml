@@ -44,6 +44,17 @@
      enabled: yes
   when: ansible_os_family == 'RedHat' and ansible_distribution_version.split('.')[0] == '6'
 
+- name: "Start {{ tomcat_version }} service add ubuntu 14"
+  template: src=templates/centos6_tomcat_service.j2 dest=/etc/init.d/tomcat mode=0755
+  when: ansible_distribution == 'Ubuntu' and  ansible_distribution_major_version == '14'
+
+  
+- name: "Start {{ tomcat_version }} service start ubuntu 14"
+  service:
+     name: tomcat
+     state: started
+     enabled: yes
+  when: ansible_distribution == 'Ubuntu' and ansible_distribution_major_version == '14'
 
 
 - include: firewalled_tomcat.yml

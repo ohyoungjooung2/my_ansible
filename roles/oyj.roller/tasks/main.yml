@@ -84,5 +84,5 @@
 
 
 #tomcat {{ tomcat_version }} start
- - include: tomcat_start.yml
+- include: tomcat_start.yml
 

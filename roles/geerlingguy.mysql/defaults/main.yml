@@ -123,19 +123,28 @@ db_user: "roller"
 mysql_users: 
   - { name: roller,
       host: 10.0.0.5,
-      password: '*232BEE719F1B45FF4193133EE37DDA54ED4A2F47',
+      password: '*14E65567ABDB5135D0CFD9A70B3032C179A49EE7',
       encrypted: yes,
       priv: 'rollerdb.*:ALL,GRANT',
       state: present,
   }
 
   - { name: "{{ db_user }}",
-      host: 10.0.0.6,
-      password: '*232BEE719F1B45FF4193133EE37DDA54ED4A2F47',
+      host: 10.0.0.17,
+      password: '*14E65567ABDB5135D0CFD9A70B3032C179A49EE7',
       encrypted: yes,
       priv: 'rollerdb.*:ALL,GRANT',
       state: present,
   }
+
+  - { name: "{{ db_user }}",
+      host: 127.0.0.1,
+      password: '*14E65567ABDB5135D0CFD9A70B3032C179A49EE7',
+      encrypted: yes,
+      priv: 'rollerdb.*:ALL,GRANT',
+      state: present,
+  }
+
 # Replication settings (replication is only enabled if master/user have values).
 mysql_server_id: "1"
 mysql_max_binlog_size: "100M"

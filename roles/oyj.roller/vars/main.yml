@@ -1,5 +1,6 @@
 ---
-mirror_host: "http://apache.mirror.cdnetworks.com"
+#mirror_host: "http://apache.mirror.cdnetworks.com"
+mirror_host: " http://mirror.apache-kr.org/"
 
 #Driver list
 driver_list:
@@ -33,7 +34,7 @@ db_driver_class: "com.mysql.jdbc.Driver"
 #db url
 db_url: "{{ db_type }}:{{db_daemon}}://{{ db_ip }}:{{ db_port }}/{{ db_name }}?{{ autor }}&{{ useuni }}&{{ ctE }}&{{ mysE }}"
 db_user_name: "roller"
-db_password: "dnflskfk"
+db_password: "secret"
 smtp: "smtp.gmail.com"
 mail_addr: "wnapdlf05@gmail.com"
 mail_config_type: "properties"

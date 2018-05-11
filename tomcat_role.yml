@@ -1,4 +1,4 @@
-- hosts: c7
+- hosts: u14
   remote_user: vagrant
   roles:
     - { role: oyj.tomcat, java_home: "/usr/local/jdk-1.8.0_171", tomcat_version: "8.5.31" }
