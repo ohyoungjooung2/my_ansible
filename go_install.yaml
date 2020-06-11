@@ -1,0 +1,57 @@
+- hosts: localhost
+  #connection: local
+  #This playbook install go 1.14.4 onto linux oses.
+  gather_facts: no
+ 
+  #become: yes
+  vars:
+    LOCAL_HOME: "{{ lookup('env','HOME')}}"
+    GO_VERSION: "go1.14.4"
+    GOPKG_NAME: "{{ GO_VERSION }}.linux-amd64.tar.gz"
+    SHA256: "aed845e4185a0b2a3c3d5e1d0a35491702c55889192bb9c30e67a3de6849c067"
+    BASE_URL: "https://dl.google.com/go/"
+    DEST: "/tmp"
+    GO_DIR: "{{ LOCAL_HOME }}"
+
+  tasks:
+  - name: Collect only facts returned by facter to save time
+    setup:
+      gather_subset:
+         - '!all'
+         - '!any'
+         - facter
+
+  - name: Download go binary package
+    get_url: 
+         url: "{{ BASE_URL }}{{GOPKG_NAME}}"
+         dest: "{{ DEST }}/{{ GOPKG_NAME }}"
+         checksum: "sha256:{{ SHA256 }}"
+    when: ansible_system == 'Linux'
+    #- meta: end_play
+    
+  - name: "Unarchive {{ GO_VERSION }}"
+    unarchive: 
+         src: "/tmp/{{GOPKG_NAME}}"
+         dest: "{{ GO_DIR }}/"
+         remote_src: no
+    when: ansible_system == 'Linux'
+
+  - name: "$PATH Setting"
+    shell: |
+         CHK=$(cat ~/.bashrc | grep "go/bin")
+         echo $CHK
+         if [[ $CHK == "" ]]
+         then
+            echo "no exist"
+            echo "export PATH=$HOME/go/bin:$PATH" >> $HOME/.bashrc
+         else
+            echo "Path already exist"
+         fi
+    args:
+         executable: /bin/bash
+    register: RESULT
+
+  - debug:
+       var: RESULT
+
+  - meta: end_play
