@@ -1,0 +1,65 @@
+- hosts: 127.0.0.1
+  connection: local
+  #This playbook install terraform 0.12.28 onto linux oses.
+  gather_facts: no
+ 
+  #become: yes
+  vars:
+    LOCAL_HOME: "{{ lookup('env','HOME')}}"
+    VERSION: "terraform_0.12.28"
+    PKG_NAME: "{{ VERSION }}_linux_amd64.zip"
+    SHA256: "be99da1439a60942b8d23f63eba1ea05ff42160744116e84f46fc24f1a8011b6"
+    BASE_URL: "https://releases.hashicorp.com/terraform/0.12.28/"
+    DEST: "/tmp"
+    INSTALL_DIR: "{{ LOCAL_HOME }}/bin"
+
+  tasks:
+  - name: Collect only facts returned by facter to save time
+    setup:
+      gather_subset:
+         - '!all'
+         - '!any'
+         - facter
+
+  - name: "Download {{ PKG_NAME }} binary package"
+    get_url: 
+         url: "{{ BASE_URL }}{{PKG_NAME}}"
+         dest: "{{ DEST }}/{{ PKG_NAME }}"
+         checksum: "sha256:{{ SHA256 }}"
+    when: ansible_system == 'Linux'
+    
+  - name: "Create dir {{ INSTALL_DIR }} if not exists"
+    file: 
+         path: "{{ INSTALL_DIR }}"
+         state: directory
+    when: ansible_system == 'Linux'
+
+  - name: "Unarchive {{ VERSION }}"
+    unarchive: 
+         src: "/tmp/{{PKG_NAME}}"
+         dest: "{{ INSTALL_DIR }}/"
+         remote_src: no
+    when: ansible_system == 'Linux'
+    #- meta: end_play
+
+  - name: "$PATH Setting"
+    shell: |
+         CHK=$(which terraform)
+         echo $CHK
+         if [[ $CHK == "" ]]
+         then
+            echo "no exist"
+            echo "export PATH=$HOME/bin:$PATH" >> $HOME/.bashrc
+            $HOME/bin/terraform --version
+         else
+            echo "Path already exist"
+            $HOME/bin/terraform --version
+         fi
+    args:
+         executable: /bin/bash
+    register: RESULT
+
+  - debug:
+       var: RESULT
+
+  - meta: end_play
